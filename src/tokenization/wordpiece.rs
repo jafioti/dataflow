@@ -1,16 +1,17 @@
-use super::{Tokenizer, HFTokenizer};
+use super::Tokenizer;
 use serde::{Deserialize, Serialize};
+use tokenizers::Tokenizer as HFTokenizer;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct WordpieceTokenizer {
     hf_tokenizer: HFTokenizer,
 }
 
 impl Tokenizer for WordpieceTokenizer {
     fn load() -> Self {
-        super::hf_tokenizers::utils::parallelism::set_parallelism(true);
-        use super::hf_tokenizers::pre_tokenizers::whitespace::Whitespace;
-        use super::hf_tokenizers::models::wordpiece::WordPiece;
+        tokenizers::utils::parallelism::set_parallelism(true);
+        use tokenizers::pre_tokenizers::whitespace::Whitespace;
+        use tokenizers::models::wordpiece::WordPiece;
         use std::collections::HashMap;
         // Build tokenizer
         let wordpiece_builder = WordPiece::builder();
@@ -31,7 +32,7 @@ impl Tokenizer for WordpieceTokenizer {
     }
 
     fn tokenize(&self, string: &str) -> Vec<String> {
-        super::hf_tokenizers::utils::parallelism::set_parallelism(true);
+        tokenizers::utils::parallelism::set_parallelism(true);
         // Lowercase
         let string = string.to_lowercase();
         // Create tokenizer and tokenize
@@ -41,7 +42,7 @@ impl Tokenizer for WordpieceTokenizer {
     }
 
     fn batch_tokenize(&self, strings: Vec<String>) -> Vec<Vec<String>> {
-        super::hf_tokenizers::utils::parallelism::set_parallelism(true);
+        tokenizers::utils::parallelism::set_parallelism(true);
         // Lowercase
         let strings = strings.iter().map(|a| {(*a).to_lowercase()}).collect();
         // Create tokenizer and tokenize

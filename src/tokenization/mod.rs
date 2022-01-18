@@ -1,10 +1,6 @@
 #[cfg(test)]
 mod tests;
-#[cfg(not(doctest))]
-pub mod hf_tokenizers;
 use std::fmt::Debug;
-
-pub use hf_tokenizers::Tokenizer as HFTokenizer;
 
 // Tokenizers
 mod wordpiece;
@@ -17,7 +13,7 @@ mod alphabet;
 pub use alphabet::AlphabetTokenizer;
 
 /// A trait to implement for all tokenizers, contains basic tokenizing and untokenizing functions
-pub trait Tokenizer: Clone + Debug + Send + Sync {
+pub trait Tokenizer: Debug + Send + Sync {
     /// Load the tokenizer
     fn load() -> Self;
     /// Tokenize a single string

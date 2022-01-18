@@ -1,16 +1,17 @@
 use std::collections::HashMap;
 
-use super::{Tokenizer, HFTokenizer};
+use super::Tokenizer;
 use serde::{Deserialize, Serialize};
+use tokenizers::Tokenizer as HFTokenizer;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct BPETokenizer {
     hf_tokenizer: HFTokenizer,
 }
 
 impl Tokenizer for BPETokenizer {
     fn load() -> Self {
-        use crate::tokenization::hf_tokenizers::models::bpe::BPE;
+        use tokenizers::models::bpe::BPE;
         use serde_json::Value;
         // Create token2index map
         // Open vocab file
@@ -54,7 +55,7 @@ impl Tokenizer for BPETokenizer {
     }
 
     fn tokenize(&self, string: &str) -> Vec<String> {
-        super::hf_tokenizers::utils::parallelism::set_parallelism(true);
+        tokenizers::utils::parallelism::set_parallelism(true);
         // Lowercase
         let string = string.to_lowercase();
         // Create tokenizer and tokenize
@@ -64,7 +65,7 @@ impl Tokenizer for BPETokenizer {
     }
 
     fn batch_tokenize(&self, strings: Vec<String>) -> Vec<Vec<String>> {
-        super::hf_tokenizers::utils::parallelism::set_parallelism(true);
+        tokenizers::utils::parallelism::set_parallelism(true);
         // Lowercase
         let strings = strings.iter().map(|a| {a.to_lowercase()}).collect();
         // Create tokenizer and tokenize

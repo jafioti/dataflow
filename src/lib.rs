@@ -11,10 +11,3 @@ pub mod batching;
 pub mod dataloader;
 /// Pipeline module contains the dataflow pipeline struct, as well as all pipeline utilities
 pub mod pipeline;
-
-extern crate log;
-#[macro_use]
-extern crate lazy_static;
-
-#[macro_use]
-extern crate derive_builder;
