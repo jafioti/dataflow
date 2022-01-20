@@ -1,4 +1,5 @@
 use super::{Connector, Duplicator, Pair, Stateless};
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 pub trait Node {
     type Input;
@@ -15,6 +16,7 @@ pub trait Node {
         Connector::new(self, node)
     }
 
+    /// Add function to pipeline
     fn add_fn<O, F: Fn(Vec<Self::Output>) -> Vec<O>>(self, function: F) -> Connector<Self, Stateless<Self::Output, O, F>> 
     where Self: std::marker::Sized {
         Connector::new(
@@ -22,6 +24,19 @@ pub trait Node {
             Stateless::new(function)
         )
     }
+
+    // /// Add function that takes a single datapoint and outputs a single datapoint
+    // fn add_single_fn<O, F: Fn(Self::Output) -> O + Send + Sync, B: Fn(Vec<Self::Output>) -> Vec<O>>(self, function: F) -> Connector<Self, Stateless<Self::Output, O, B>> 
+    // where Self: std::marker::Sized, 
+    // <Self as crate::pipeline::node::Node>::Output: std::marker::Sized, 
+    // [<Self as crate::pipeline::node::Node>::Output]: rayon::iter::ParallelIterator {
+    //     Connector::new(
+    //         self,
+    //         Stateless::new(|input: Vec<Self::Output>| {
+    //             input.into_par_iter().map(function).collect()
+    //         })
+    //     )
+    // }
 
     #[allow(clippy::type_complexity)]
     fn split<N3: Node<Input = Self::Output>, N4: Node<Input = Self::Output>>(self, node1: N3, node2: N4) -> Connector<Connector<Self, Duplicator<Self::Output>>, Pair<N3, N4>> 

@@ -1,6 +1,6 @@
 use rand::{prelude::SliceRandom, thread_rng};
 use super::Dataloader;
-use crate::pipeline::Node;
+use crate::pipeline::{Node, Batch};
 
 
 /// A "loader" to load a full range of numbers randomly
@@ -42,8 +42,9 @@ impl Node for CreateRange {
 fn test_dataloader() {
     // Write a dataloader test
     let pipeline = CreateRange::new(10_000)
-        .add_fn(|i| i.into_iter().map(|i| i * 10).collect());
-    let mut loader = Dataloader::new(pipeline, 10);
+        .add_fn(|i| i.into_iter().map(|i| i * 10).collect())
+        .add_node(Batch::new(10));
+    let mut loader = Dataloader::new(pipeline);
     assert_eq!(loader.len(), 10_000);
     
     // Run for 5_000 steps and collect results
@@ -53,9 +54,8 @@ fn test_dataloader() {
         if data.len() == 5_000 {break;}
     }
 
-    // Check the remaining examples, 5_000 should remaim
+    // Check the examples, 5_000 should be retrieved
     assert_eq!(data.len(), 5_000);
-    assert_eq!(loader.len(), 5_000);
 
     // Run for the rest of the data and store it
     for example in &mut loader {

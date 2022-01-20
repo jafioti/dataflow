@@ -1,25 +1,25 @@
 use std::{collections::VecDeque, thread};
+use rand::{prelude::SliceRandom, thread_rng};
+
 use crate::pipeline::Node;
 
 pub struct Dataloader<N: Node<Input = ()> + Send> {
     pipeline: Option<N>,
     buffer: VecDeque<N::Output>,
-    batch_size: usize,
     block_size: usize,
     loading_process: Option<thread::JoinHandle<(N, Vec<N::Output>)>>,
 }
 
 impl <N: Node<Input = ()> + Send + 'static>Dataloader<N> 
 where N::Output: Send {
-    pub fn new(mut pipeline: N, batch_size: usize) -> Self {
+    pub fn new(mut pipeline: N) -> Self {
         pipeline.reset();
         Dataloader {
             pipeline: Some(pipeline),
             buffer: VecDeque::new(),
-            batch_size,
             block_size: 1000,
             loading_process: None
-        } 
+        }
     }
 
     pub fn load_block_size(self, block_size: usize) -> Self {
@@ -33,7 +33,8 @@ where N::Output: Send {
         let mut pipeline = std::mem::replace(&mut self.pipeline, None).unwrap();
         let input = vec![(); usize::min(self.block_size, pipeline.data_remaining())];
         self.loading_process = Some(thread::spawn(move || {
-            let data = pipeline.process(input);
+            let mut data = pipeline.process(input);
+            data.shuffle(&mut thread_rng());
             (pipeline, data)
         }));
     }
@@ -50,7 +51,6 @@ where N::Output: Send {
             self.buffer.extend(data);
             len
         };
-        println!("Pipeline data: {} Buffer data: {}", pipeline_data, self.buffer.len());
         pipeline_data + self.buffer.len()
     }
 
@@ -61,7 +61,7 @@ where N::Output: Send {
 
 impl <N: Node<Input = ()> + Send + 'static>Iterator for Dataloader<N> 
 where N::Output: Send {
-    type Item = Vec<N::Output>;
+    type Item = N::Output;
 
     fn next(&mut self) -> Option<Self::Item> {
         // Check if we need to load more
@@ -81,12 +81,12 @@ where N::Output: Send {
                 let process = std::mem::replace(&mut self.loading_process, None).unwrap();
                 let (pipeline, mut data) = process.join().unwrap();
                 self.pipeline = Some(pipeline);
-                let returning_data = Some(data.drain(..self.batch_size).collect());
+                let returning_data = data.pop().unwrap();
                 self.buffer.extend(data);
-                returning_data
+                Some(returning_data)
             }
         } else {
-            Some(self.buffer.drain(..self.batch_size).collect())
+            Some(self.buffer.pop_front().unwrap())
         }
     }
 }

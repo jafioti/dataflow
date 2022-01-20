@@ -47,6 +47,7 @@ impl Node for RandomLoader {
                     if current_index == examples_to_load[current_example] {
                         loaded.push(line);
                         current_example += 1;
+                        if current_example == examples_to_load.len() {break;}
                     }
                     current_index += 1;
                 }
