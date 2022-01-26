@@ -8,7 +8,9 @@ pub struct RandomLoader {
     files: Vec<String>, // The files to load from
     delimeter: String, // The delimiter to split examples by
     load_order: Vec<usize>, // A full vector of indexes for every example, shuffled on reset
-    currently_loaded_index: usize // The last example we loaded as an index of the load_order vector (starts at 0)
+    currently_loaded_index: usize, // The last example we loaded as an index of the load_order vector (starts at 0)
+    max_index: usize, // The max index to load
+    min_index: usize, // The min index to load
 }
 
 impl RandomLoader {
@@ -17,12 +19,37 @@ impl RandomLoader {
             files,
             delimeter: "\n".to_string(),
             load_order: vec![],
-            currently_loaded_index: 0
+            currently_loaded_index: 0,
+            min_index: 0,
+            max_index: usize::MAX,
+        }
+    }
+
+    /// Create a new RandomLoader with all files in a directory
+    pub fn from_directory(path: String) -> Self {
+        let files = std::fs::read_dir(path).unwrap()
+            .into_iter().map(|r| r.unwrap().path().to_str().unwrap().to_string())
+            .collect();
+        RandomLoader {
+            files,
+            delimeter: "\n".to_string(),
+            load_order: vec![],
+            currently_loaded_index: 0,
+            min_index: 0,
+            max_index: usize::MAX,
         }
     }
 
     pub fn with_delimeter(self, delimeter: String) -> Self {
         RandomLoader {delimeter, ..self}
+    }
+
+    pub fn max_index(self, max_index: usize) -> Self {
+        RandomLoader{max_index, ..self}
+    }
+
+    pub fn min_index(self, min_index: usize) -> Self {
+        RandomLoader{min_index, ..self}
     }
 }
 
@@ -96,13 +123,17 @@ impl Node for RandomLoader {
                         } else {
                             intermediate = split.last().unwrap().to_string();
                         }
+                        if current_index >= examples_to_load.len() {break;}
                     } else {
                         // No delimeter, just append to intermediate
                         intermediate.push_str(&line);
                     }
                 }
             }
+            if current_example == examples_to_load.len() {break;}
         }
+
+        self.currently_loaded_index += loaded.len();
 
         loaded.shuffle(&mut thread_rng());
         loaded
@@ -110,8 +141,9 @@ impl Node for RandomLoader {
 
     fn reset(&mut self) {
         // Count the total number of examples
-        let total_examples = self.files.iter().map(|f| {
-            let file = File::open(f).unwrap();
+        let mut total_examples = 0;
+        for file in &self.files {
+            let file = File::open(file).unwrap();
             let reader = BufReader::new(file);
             let mut delimeter_count = 0;
             if self.delimeter == "\n" {
@@ -122,10 +154,11 @@ impl Node for RandomLoader {
                 }
                 delimeter_count += 1; // Since delimeters divide the examples, there should be 1 more example than delimeter
             }
-            delimeter_count
-        }).sum();
+            total_examples += delimeter_count;
+            if total_examples >= self.max_index {break;}
+        }
         // Setup load_order
-        self.load_order = (0..total_examples).collect();
+        self.load_order = (usize::max(0, self.min_index)..usize::min(total_examples, self.max_index)).collect();
         self.load_order.shuffle(&mut thread_rng());
         self.currently_loaded_index = 0;
     }

@@ -24,7 +24,7 @@ impl <T>Node for Batch<T> {
     fn process(&mut self, mut input: Vec<Self::Input>) -> Vec<Self::Output> {
         let mut batches = Vec::with_capacity(input.len() / self.batch_size);
         while !input.is_empty() {
-            batches.push(input.drain(..self.batch_size).collect());
+            batches.push(input.drain(..usize::min(self.batch_size, input.len())).collect());
         }
         batches
     }
