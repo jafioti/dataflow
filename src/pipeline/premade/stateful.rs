@@ -1,5 +1,5 @@
 use std::marker::PhantomData;
-use super::super::{Connector, Node, Stateless};
+use super::super::Node;
 
 pub struct Stateful<I, O, S, F: Fn(Vec<I>, &mut S) -> Vec<O>> {
     _phantom: PhantomData<(I, O)>,
@@ -14,17 +14,6 @@ impl <I, O, S, F: Fn(Vec<I>, &mut S) -> Vec<O>>Stateful<I, O, S, F> {
             function,
             state
         }
-    }
-
-    pub fn add_node<N: Node<Input = O>>(self, node: N) -> Connector<Self, N> {
-        Connector::new(self, node)
-    }
-
-    pub fn add_fn<NO, F1: Fn(Vec<O>) -> Vec<NO>>(self, function: F1) -> Connector<Self, Stateless<O, NO, F1>> {
-        Connector::new(
-            self,
-            Stateless::new(function)
-        )
     }
 }
 

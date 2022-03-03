@@ -18,9 +18,9 @@ fn main() {
 The RandomLoader by default loads individual lines randomly from files. Next add a transformation to it with the add_fn() function:
 ```rust
 let pipeline = RandomLoader::new(vec!["file1.txt".to_string(), "file2.txt".to_string()])
-      .add_fn(|lines| lines.into_iter().map(|line| format!("Hello {}", line)).collect());
+      .add_fn(|line| format!("Hello {}", line));
 ```
-This creates a new Stateless Node, which just runs the closure on the data. The closure needs to take a batch of data, which allows you to do batch processing. In this case, we just process sequentially with `.into_iter().map().collect()` 
+This creates a new Stateless Node, which just runs the closure on the data. This closure takes in a single datapoint and outputs a single datapoint. If we want to do batch processing, we can use `.add_batch_fn()` which takes a closure that can process a batch at a time.
 
 Now we've added "Hello " to every line, let's create a Stateful Node to hold a Tokenizer and make it tokenize our data:
 ```rust
@@ -31,7 +31,7 @@ let tokenizer = dataflow::tokenization::WordpieceTokenizer::load();
 
 // Our pipeline
 let pipeline = RandomLoader::new(vec!["file1.txt".to_string(), "file2.txt".to_string()])
-      .add_fn(|lines| lines.into_iter().map(|line| format!("Hello {}", line)).collect())
+      .add_fn(|lines| format!("Hello {}", line))
       .add_node(
             Stateful::new(
                   |(lines, tokenizer)| {
@@ -64,5 +64,7 @@ for example in &mut dataloader {
 ```
 
 To Do:
+- [ ] Make dataloader use a multiqueue instead of draining all examples into buffer on main thread
 - [ ] Make tokenizer loading more efficient
 - [ ] Make auto-parallel pipeline Node using rayon
+- [ ] Clear up any discrepencies between batch and single functions (like in Stateful)

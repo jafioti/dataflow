@@ -6,8 +6,10 @@ use crate::pipeline::Node;
 pub struct Dataloader<N: Node<Input = ()> + Send> {
     pipeline: Option<N>,
     buffer: VecDeque<N::Output>,
-    block_size: usize,
+    load_block_size: usize,
+    buffer_size: usize,
     loading_process: Option<thread::JoinHandle<(N, Vec<N::Output>)>>,
+    loading_process_flag: Option<thread_control::Flag>,
 }
 
 impl <N: Node<Input = ()> + Send + 'static>Dataloader<N> 
@@ -17,13 +19,19 @@ where N::Output: Send {
         Dataloader {
             pipeline: Some(pipeline),
             buffer: VecDeque::new(),
-            block_size: 1000,
-            loading_process: None
+            load_block_size: 1000,
+            buffer_size: 1000,
+            loading_process: None,
+            loading_process_flag: None,
         }
     }
 
-    pub fn load_block_size(self, block_size: usize) -> Self {
-        Dataloader{block_size, ..self}
+    pub fn load_block_size(self, load_block_size: usize) -> Self {
+        Dataloader{load_block_size, ..self}
+    }
+
+    pub fn buffer_size(self, buffer_size: usize) -> Self {
+        Dataloader{buffer_size, ..self}
     }
 
     fn load_block(&mut self) {
@@ -31,10 +39,13 @@ where N::Output: Send {
 
         // Launch loading thread
         let mut pipeline = std::mem::replace(&mut self.pipeline, None).unwrap();
-        let input = vec![(); usize::min(self.block_size, pipeline.data_remaining())];
+        let input = vec![(); usize::min(self.load_block_size, pipeline.data_remaining())];
+        let (flag, control) = thread_control::make_pair();
+        self.loading_process_flag = Some(flag);
         self.loading_process = Some(thread::spawn(move || {
             let mut data = pipeline.process(input);
             data.shuffle(&mut thread_rng());
+            control.stop();
             (pipeline, data)
         }));
     }
@@ -45,6 +56,7 @@ where N::Output: Send {
         } else {
             // Wait for pipeline to return before returning number
             let process = std::mem::replace(&mut self.loading_process, None).unwrap();
+            self.loading_process_flag = None;
             let (pipeline, data) = process.join().unwrap();
             let len = pipeline.data_remaining();
             self.pipeline = Some(pipeline);
@@ -64,8 +76,20 @@ where N::Output: Send {
     type Item = N::Output;
 
     fn next(&mut self) -> Option<Self::Item> {
+        // Check if the loading thread is finished
+        if let Some(flag) = &self.loading_process_flag {
+            if !flag.is_alive() {
+                // Unload thread
+                let process = std::mem::replace(&mut self.loading_process, None).unwrap();
+                self.loading_process_flag = None;
+                let (pipeline, data) = process.join().unwrap();
+                self.pipeline = Some(pipeline);
+                self.buffer.extend(data);
+            }
+        }
+
         // Check if we need to load more
-        if self.buffer.len() < self.block_size && self.pipeline.is_some() {
+        if self.buffer.len() < self.buffer_size && self.pipeline.is_some() {
             if self.pipeline.as_ref().unwrap().data_remaining() == 0 && self.buffer.is_empty() {
                 self.pipeline.as_mut().unwrap().reset();
                 return None;
@@ -79,6 +103,7 @@ where N::Output: Send {
                 None
             } else {
                 let process = std::mem::replace(&mut self.loading_process, None).unwrap();
+                self.loading_process_flag = None;
                 let (pipeline, mut data) = process.join().unwrap();
                 self.pipeline = Some(pipeline);
                 let returning_data = data.pop().unwrap();

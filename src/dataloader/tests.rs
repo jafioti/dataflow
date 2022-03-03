@@ -42,7 +42,7 @@ impl Node for CreateRange {
 fn test_dataloader() {
     // Write a dataloader test
     let pipeline = CreateRange::new(10_000)
-        .add_fn(|i| i.into_iter().map(|i| i * 10).collect())
+        .add_fn(|i| i * 10)
         .add_node(Batch::new(10));
     let mut loader = Dataloader::new(pipeline);
     assert_eq!(loader.len(), 10_000);

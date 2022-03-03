@@ -1,36 +1,49 @@
 use std::marker::PhantomData;
-use super::super::{Connector, Node};
+use crate::pipeline::Node;
 
-pub struct Stateless<I, O, F: Fn(Vec<I>) -> Vec<O>> {
+pub struct BatchStateless<I, O, F: Fn(Vec<I>) -> Vec<O>> {
     _phantom: PhantomData<(I, O)>,
     function: F
 }
 
-impl <I, O, F: Fn(Vec<I>) -> Vec<O>>Stateless<I, O, F> {
+impl <I, O, F: Fn(Vec<I>) -> Vec<O>>BatchStateless<I, O, F> {
     pub fn new(function: F) -> Self {
-        Stateless {
+        BatchStateless {
             _phantom: PhantomData::default(),
             function
         }
     }
-
-    pub fn add_node<N: Node<Input = O>>(self, node: N) -> Connector<Self, N> {
-        Connector::new(self, node)
-    }
-
-    pub fn add_fn<NO, F1: Fn(Vec<O>) -> Vec<NO>>(self, function: F1) -> Connector<Self, Stateless<O, NO, F1>> {
-        Connector::new(
-            self,
-            Stateless::new(function)
-        )
-    }
 }
 
-impl <I, O, F: Fn(Vec<I>) -> Vec<O>>Node for Stateless<I, O, F> {
+impl <I, O, F: Fn(Vec<I>) -> Vec<O>>Node for BatchStateless<I, O, F> {
     type Input = I;
     type Output = O;
 
     fn process(&mut self, input: Vec<Self::Input>) -> Vec<Self::Output> {
         (self.function)(input)    
+    }
+}
+
+/// Really just so that we can use add_fn() on the node, there must be a better way than creating a node just for this
+pub struct SingleStateless<I, O, F: Fn(I) -> O> {
+    _phantom: PhantomData<(I, O)>,
+    function: F
+}
+
+impl <I, O, F: Fn(I) -> O>SingleStateless<I, O, F> {
+    pub fn new(function: F) -> Self {
+        SingleStateless {
+            _phantom: PhantomData::default(),
+            function
+        }
+    }
+}
+
+impl <I, O, F: Fn(I) -> O>Node for SingleStateless<I, O, F> {
+    type Input = I;
+    type Output = O;
+
+    fn process(&mut self, input: Vec<Self::Input>) -> Vec<Self::Output> {
+        input.into_iter().map(&self.function).collect()  
     }
 }
