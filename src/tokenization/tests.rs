@@ -16,6 +16,13 @@ fn tokenize_spaces() {
 }
 
 #[test]
+fn tokenize_sentences() {
+    let tokens: Vec<String> = vec!["hello, how are you?", "good, how are you?"].iter().map(|t| {(*t).to_string()}).collect();
+    let tokenizer = SentenceTokenizer::load();
+    assert_eq!(tokenizer.tokenize("hello, how are you? good, how are you?"), tokens);
+}
+
+#[test]
 fn tokenize_bpe() {
     let tokens: Vec<String> = vec!["hello", ",", " ", "how", " ", "are", " ", "you"].iter().map(|str| {str.to_string()}).collect();
     let tokenizer = BPETokenizer::load();
@@ -58,6 +65,14 @@ fn untokenize_alphabet() {
 #[test]
 fn untokenize_spaces() {
     let sentence = "hello, how are you?";
+    let tokenizer = WhitespaceTokenizer::load();
+    let tokens = tokenizer.tokenize(sentence);
+    assert_eq!(tokenizer.untokenize(tokens), sentence.to_string());
+}
+
+#[test]
+fn untokenize_sentences() {
+    let sentence = "hello how are you? good, how are you?";
     let tokenizer = WhitespaceTokenizer::load();
     let tokens = tokenizer.tokenize(sentence);
     assert_eq!(tokenizer.untokenize(tokens), sentence.to_string());

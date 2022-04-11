@@ -11,6 +11,8 @@ mod whitespace;
 pub use whitespace::WhitespaceTokenizer;
 mod alphabet;
 pub use alphabet::AlphabetTokenizer;
+mod sentence;
+pub use sentence::SentenceTokenizer;
 
 /// A trait to implement for all tokenizers, contains basic tokenizing and untokenizing functions
 pub trait Tokenizer: Debug + Send + Sync {

@@ -13,7 +13,7 @@ impl Vocab for BPEVocab {
         use serde_json::Value;
 
         // Open vocab file
-        let json: HashMap<String, Value>  = serde_json::from_str(&include_str!("../resources/bpe_vocab.json").replace("/", "").replace("Ġ", "")).expect("Error parsing BPE vocab file!");
+        let json: HashMap<String, Value>  = serde_json::from_str(&include_str!("../resources/bpe_vocab.json").replace('/', "").replace('Ġ', "")).expect("Error parsing BPE vocab file!");
         // Build sorted vector of tokens from hashmap
         let mut token_vec: Vec<String> = vec![String::from(""); 50265]; // Happen to know the largest index in the json is 50264, this is a bad system
         for token in json.keys() {
