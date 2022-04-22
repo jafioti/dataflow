@@ -3,21 +3,21 @@ use rand::{prelude::SliceRandom, thread_rng};
 
 use crate::pipeline::Node;
 
-pub struct Dataloader<N: Node<Input = ()> + Send> {
-    pipeline: Option<N>,
-    buffer: VecDeque<N::Output>,
+pub struct Dataloader<T> {
+    pipeline: Option<Box<dyn Node<Input = (), Output = T> + Send>>,
+    buffer: VecDeque<T>,
     load_block_size: usize,
     buffer_size: usize,
-    loading_process: Option<thread::JoinHandle<(N, Vec<N::Output>)>>,
+    #[allow(clippy::type_complexity)]
+    loading_process: Option<thread::JoinHandle<(Box<dyn Node<Input = (), Output = T> + Send>, Vec<T>)>>,
     loading_process_flag: Option<thread_control::Flag>,
 }
 
-impl <N: Node<Input = ()> + Send + 'static>Dataloader<N> 
-where N::Output: Send {
-    pub fn new(mut pipeline: N) -> Self {
+impl <T: Send + 'static>Dataloader<T> {
+    pub fn new(mut pipeline: impl Node<Input = (), Output = T> + Send + 'static) -> Self {
         pipeline.reset();
         Dataloader {
-            pipeline: Some(pipeline),
+            pipeline: Some(Box::new(pipeline)),
             buffer: VecDeque::new(),
             load_block_size: 1000,
             buffer_size: 1000,
@@ -71,9 +71,8 @@ where N::Output: Send {
     }
 }
 
-impl <N: Node<Input = ()> + Send + 'static>Iterator for Dataloader<N> 
-where N::Output: Send {
-    type Item = N::Output;
+impl <T: Send + 'static>Iterator for Dataloader<T> {
+    type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
         // Check if the loading thread is finished
