@@ -15,7 +15,7 @@ pub fn pad_mask<T: std::cmp::PartialEq>(batch: &[Vec<T>], pad_value: T) -> Vec<V
 }
 
 /// Pad all sequences to the length of the longest sequence
-pub fn pad_batch<T: std::clone::Clone>(batch: &mut Vec<Vec<T>>, pad_value: T) {
+pub fn pad_batch<T: std::clone::Clone>(batch: &mut [Vec<T>], pad_value: T) {
     // Get longest example
     let mut longest = 0;
     for example in batch.iter() {
@@ -31,7 +31,7 @@ pub fn pad_batch<T: std::clone::Clone>(batch: &mut Vec<Vec<T>>, pad_value: T) {
 }
 
 /// Filters lists by a max length and returns the ones under the max
-pub fn filter_by_length<T: Len> (lists: &mut Vec<Vec<T>>, min_length: Option<usize>, max_length: Option<usize>) {
+pub fn filter_by_length<T: Len> (lists: &mut [Vec<T>], min_length: Option<usize>, max_length: Option<usize>) {
     // Loop through elements in all lists
     for i in (0..lists[0].len()).rev() {
         // Loop through each list
@@ -48,7 +48,7 @@ pub fn filter_by_length<T: Len> (lists: &mut Vec<Vec<T>>, min_length: Option<usi
 }
 
 /// Shuffles multiple lists of the same length in the same ways
-pub fn shuffle_lists<T: std::clone::Clone>(lists: &mut Vec<Vec<T>>) {
+pub fn shuffle_lists<T: std::clone::Clone>(lists: &mut [Vec<T>]) {
     use rand::thread_rng;
     use rand::seq::SliceRandom;
 
@@ -70,7 +70,7 @@ pub fn shuffle_lists<T: std::clone::Clone>(lists: &mut Vec<Vec<T>>) {
 }
 
 /// Sort lists by length. Uses the lengths of the elements in the first list passed in
-pub fn sort_lists_by_length<T: Len + std::clone::Clone>(lists: &mut Vec<Vec<T>>, longest_first:Option<bool>) {
+pub fn sort_lists_by_length<T: Len + std::clone::Clone>(lists: &mut [Vec<T>], longest_first:Option<bool>) {
     for i in 1..lists.len() {assert!(lists[i].len() == lists[0].len())} // Ensure all lists are the same length
     
     // Zip lists
