@@ -1,13 +1,13 @@
 use std::{fs::File, io::Read};
 
-use rand::{thread_rng, prelude::SliceRandom};
+use rand::{prelude::SliceRandom, thread_rng};
 
 use crate::pipeline::Node;
 
 pub struct FileLoader {
     files: Vec<String>,
     load_order: Vec<usize>, // A full vector of indexes for every example, shuffled on reset
-    currently_loaded_index: usize // The last example we loaded as an index of the load_order vector (starts at 0)
+    currently_loaded_index: usize, // The last example we loaded as an index of the load_order vector (starts at 0)
 }
 
 impl FileLoader {
@@ -15,7 +15,7 @@ impl FileLoader {
         FileLoader {
             files,
             load_order: vec![],
-            currently_loaded_index: 0
+            currently_loaded_index: 0,
         }
     }
 }

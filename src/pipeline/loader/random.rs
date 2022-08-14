@@ -1,16 +1,19 @@
-use std::{fs::File, io::{BufReader, BufRead}};
 use rand::{prelude::SliceRandom, thread_rng};
+use std::{
+    fs::File,
+    io::{BufRead, BufReader},
+};
 
 use crate::pipeline::Node;
 
 /// Given files, randomly load segments seperated by a delimeter
 pub struct RandomLoader {
-    files: Vec<String>, // The files to load from
-    delimeter: String, // The delimiter to split examples by
-    load_order: Vec<usize>, // A full vector of indexes for every example, shuffled on reset
+    files: Vec<String>,            // The files to load from
+    delimeter: String,             // The delimiter to split examples by
+    load_order: Vec<usize>,        // A full vector of indexes for every example, shuffled on reset
     currently_loaded_index: usize, // The last example we loaded as an index of the load_order vector (starts at 0)
-    max_index: usize, // The max index to load
-    min_index: usize, // The min index to load
+    max_index: usize,              // The max index to load
+    min_index: usize,              // The min index to load
 }
 
 impl RandomLoader {
@@ -27,8 +30,10 @@ impl RandomLoader {
 
     /// Create a new RandomLoader with all files in a directory
     pub fn from_directory(path: &str) -> Self {
-        let files = std::fs::read_dir(path).unwrap()
-            .into_iter().map(|r| r.unwrap().path().to_str().unwrap().to_string())
+        let files = std::fs::read_dir(path)
+            .unwrap()
+            .into_iter()
+            .map(|r| r.unwrap().path().to_str().unwrap().to_string())
             .collect();
         RandomLoader {
             files,
@@ -41,15 +46,15 @@ impl RandomLoader {
     }
 
     pub fn with_delimeter(self, delimeter: String) -> Self {
-        RandomLoader {delimeter, ..self}
+        RandomLoader { delimeter, ..self }
     }
 
     pub fn max_index(self, max_index: usize) -> Self {
-        RandomLoader{max_index, ..self}
+        RandomLoader { max_index, ..self }
     }
 
     pub fn min_index(self, min_index: usize) -> Self {
-        RandomLoader{min_index, ..self}
+        RandomLoader { min_index, ..self }
     }
 }
 
@@ -59,9 +64,11 @@ impl Node for RandomLoader {
 
     fn process(&mut self, input: Vec<Self::Input>) -> Vec<Self::Output> {
         // Load next input.len() examples in order, then shuffle them
-        let mut examples_to_load = self.load_order[self.currently_loaded_index..self.currently_loaded_index + input.len()].to_vec();
+        let mut examples_to_load = self.load_order
+            [self.currently_loaded_index..self.currently_loaded_index + input.len()]
+            .to_vec();
         examples_to_load.sort_unstable();
-        
+
         // Run through each example in each file
         let mut current_index = 0;
         let mut current_example = 0;
@@ -74,7 +81,9 @@ impl Node for RandomLoader {
                     if current_index == examples_to_load[current_example] {
                         loaded.push(line);
                         current_example += 1;
-                        if current_example == examples_to_load.len() {break;}
+                        if current_example == examples_to_load.len() {
+                            break;
+                        }
                     }
                     current_index += 1;
                 }
@@ -105,7 +114,7 @@ impl Node for RandomLoader {
                         current_index += 1;
                         // Add middle
                         if split.len() > 1 {
-                            for s in split[1..split.len()-1].iter() {
+                            for s in split[1..split.len() - 1].iter() {
                                 if current_index == examples_to_load[current_example] {
                                     loaded.push(s.to_string());
                                     current_example += 1;
@@ -123,14 +132,18 @@ impl Node for RandomLoader {
                         } else {
                             intermediate = split.last().unwrap().to_string();
                         }
-                        if current_index >= examples_to_load.len() {break;}
+                        if current_index >= examples_to_load.len() {
+                            break;
+                        }
                     } else {
                         // No delimeter, just append to intermediate
                         intermediate.push_str(&line);
                     }
                 }
             }
-            if current_example == examples_to_load.len() {break;}
+            if current_example == examples_to_load.len() {
+                break;
+            }
         }
 
         self.currently_loaded_index += loaded.len();
@@ -155,22 +168,36 @@ impl Node for RandomLoader {
                 delimeter_count += 1; // Since delimeters divide the examples, there should be 1 more example than delimeter
             }
             total_examples += delimeter_count;
-            if total_examples >= self.max_index {break;}
+            if total_examples >= self.max_index {
+                break;
+            }
         }
         // Setup load_order (randomize on two levels: blocks of 100,000, and inside blocks)
         let mut rng = thread_rng();
         // Get starting block indexes
-        let mut block_indexes: Vec<usize> = (usize::max(0, self.min_index)..usize::min(total_examples, self.max_index)).step_by(100_000).collect();
+        let mut block_indexes: Vec<usize> = (usize::max(0, self.min_index)
+            ..usize::min(total_examples, self.max_index))
+            .step_by(100_000)
+            .collect();
         block_indexes.shuffle(&mut rng);
         // Fill in blocks
-        self.load_order = block_indexes.iter().map(|i| {
-            let mut indexes: Vec<usize> = (*i..usize::min(i + 100_000, self.max_index)).collect();
-            indexes.shuffle(&mut rng);
-            indexes
-        }).fold(Vec::with_capacity(usize::min(total_examples, self.max_index) - usize::max(0, self.min_index)), |mut acc, i| {
-            acc.extend(i.into_iter());
-            acc
-        });
+        self.load_order = block_indexes
+            .iter()
+            .map(|i| {
+                let mut indexes: Vec<usize> =
+                    (*i..usize::min(i + 100_000, self.max_index)).collect();
+                indexes.shuffle(&mut rng);
+                indexes
+            })
+            .fold(
+                Vec::with_capacity(
+                    usize::min(total_examples, self.max_index) - usize::max(0, self.min_index),
+                ),
+                |mut acc, i| {
+                    acc.extend(i.into_iter());
+                    acc
+                },
+            );
         self.currently_loaded_index = 0;
     }
 

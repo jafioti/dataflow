@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 
-use serde::{Serialize, Deserialize};
 use super::{BasicVocab, TokenNotFoundError, Vocab};
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Default, Clone)]
 pub struct BPEVocab {
-    vocab: BasicVocab
+    vocab: BasicVocab,
 }
 
 impl Vocab for BPEVocab {
@@ -13,7 +13,12 @@ impl Vocab for BPEVocab {
         use serde_json::Value;
 
         // Open vocab file
-        let json: HashMap<String, Value>  = serde_json::from_str(&include_str!("../resources/bpe_vocab.json").replace('/', "").replace('Ġ', "")).expect("Error parsing BPE vocab file!");
+        let json: HashMap<String, Value> = serde_json::from_str(
+            &include_str!("../resources/bpe_vocab.json")
+                .replace('/', "")
+                .replace('Ġ', ""),
+        )
+        .expect("Error parsing BPE vocab file!");
         // Build sorted vector of tokens from hashmap
         let mut token_vec: Vec<String> = vec![String::from(""); 50265]; // Happen to know the largest index in the json is 50264, this is a bad system
         for token in json.keys() {
@@ -28,7 +33,7 @@ impl Vocab for BPEVocab {
                 temp_vec.push(token);
             }
         }
-        BPEVocab{vocab}
+        BPEVocab { vocab }
     }
 
     fn len(&self) -> usize {
@@ -39,7 +44,10 @@ impl Vocab for BPEVocab {
         self.vocab.tokens_from_indexes(indexes)
     }
 
-    fn batch_tokens_from_indexes(&self, indexes: &[Vec<usize>]) -> Result<Vec<Vec<String>>, TokenNotFoundError> {
+    fn batch_tokens_from_indexes(
+        &self,
+        indexes: &[Vec<usize>],
+    ) -> Result<Vec<Vec<String>>, TokenNotFoundError> {
         self.vocab.batch_tokens_from_indexes(indexes)
     }
 
@@ -47,7 +55,10 @@ impl Vocab for BPEVocab {
         self.vocab.indexes_from_tokens(tokens)
     }
 
-    fn batch_indexes_from_tokens(&self, tokens: &[Vec<String>]) -> Result<Vec<Vec<usize>>, TokenNotFoundError> {
+    fn batch_indexes_from_tokens(
+        &self,
+        tokens: &[Vec<String>],
+    ) -> Result<Vec<Vec<usize>>, TokenNotFoundError> {
         self.vocab.batch_indexes_from_tokens(tokens)
     }
 }

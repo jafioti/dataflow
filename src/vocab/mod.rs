@@ -18,13 +18,18 @@ pub trait Vocab: Serialize + Default + Clone {
     fn is_empty(&self) -> bool {
         self.len() == 0
     }
-    
-    fn tokens_from_indexes(&self, indexes: &[usize]) -> Result<Vec<String>, TokenNotFoundError>;
-    fn batch_tokens_from_indexes(&self, indexes: &[Vec<usize>]) -> Result<Vec<Vec<String>>, TokenNotFoundError>;
-    fn indexes_from_tokens(&self, tokens: &[String]) -> Result<Vec<usize>, TokenNotFoundError>;
-    fn batch_indexes_from_tokens(&self, tokens: &[Vec<String>]) -> Result<Vec<Vec<usize>>, TokenNotFoundError>;
-}
 
+    fn tokens_from_indexes(&self, indexes: &[usize]) -> Result<Vec<String>, TokenNotFoundError>;
+    fn batch_tokens_from_indexes(
+        &self,
+        indexes: &[Vec<usize>],
+    ) -> Result<Vec<Vec<String>>, TokenNotFoundError>;
+    fn indexes_from_tokens(&self, tokens: &[String]) -> Result<Vec<usize>, TokenNotFoundError>;
+    fn batch_indexes_from_tokens(
+        &self,
+        tokens: &[Vec<String>],
+    ) -> Result<Vec<Vec<usize>>, TokenNotFoundError>;
+}
 
 /// Custom Error Types
 #[derive(Debug)]

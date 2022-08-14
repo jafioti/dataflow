@@ -1,4 +1,7 @@
-use std::{fs::File, io::{BufReader, BufRead}};
+use std::{
+    fs::File,
+    io::{BufRead, BufReader},
+};
 
 use itertools::Itertools;
 
@@ -14,25 +17,28 @@ pub struct KeyedLoader {
 impl KeyedLoader {
     pub fn new(files: &[&str], delimeter: &str) -> Self {
         // Get file sizes
-        let file_sizes: Vec<usize> = files.iter().map(|f| {
-            let file = File::open(f).unwrap();
-            let reader = BufReader::new(file);
-            let mut delimeter_count = 0;
-            if delimeter == "\n" {
-                delimeter_count = reader.lines().count();
-            } else {
-                for line in reader.lines().flatten() {
-                    delimeter_count += line.matches(delimeter).count();
+        let file_sizes: Vec<usize> = files
+            .iter()
+            .map(|f| {
+                let file = File::open(f).unwrap();
+                let reader = BufReader::new(file);
+                let mut delimeter_count = 0;
+                if delimeter == "\n" {
+                    delimeter_count = reader.lines().count();
+                } else {
+                    for line in reader.lines().flatten() {
+                        delimeter_count += line.matches(delimeter).count();
+                    }
+                    delimeter_count += 1; // Since delimeters divide the examples, there should be 1 more example than delimeter
                 }
-                delimeter_count += 1; // Since delimeters divide the examples, there should be 1 more example than delimeter
-            }
-            delimeter_count
-        }).collect();
+                delimeter_count
+            })
+            .collect();
 
         KeyedLoader {
             files: files.iter().map(|s| s.to_string()).collect(),
             file_sizes,
-            delimeter: delimeter.to_string()
+            delimeter: delimeter.to_string(),
         }
     }
 }
@@ -67,16 +73,22 @@ impl Node for KeyedLoader {
         for file_index in min_file..max_file + 1 {
             let file = File::open(&self.files[file_index]).unwrap();
             let reader = BufReader::new(file);
-            
+
             let mut index_counter = 0;
-            let mut segment_counter = if file_index == min_file {min} else {0};
-            let segments_to_take = if file_index == max_file {max} else {self.file_sizes[file_index]};
+            let mut segment_counter = if file_index == min_file { min } else { 0 };
+            let segments_to_take = if file_index == max_file {
+                max
+            } else {
+                self.file_sizes[file_index]
+            };
             if self.delimeter == "\n" {
                 for line in reader.lines().flatten() {
                     if segment_counter == sorted_inputs[index_counter].1 {
                         buffer.push(line);
                         index_counter += 1;
-                        if index_counter == sorted_inputs.len() {return buffer;}
+                        if index_counter == sorted_inputs.len() {
+                            return buffer;
+                        }
                     }
                     segment_counter += 1;
                 }
@@ -88,17 +100,24 @@ impl Node for KeyedLoader {
                     if segment_counter == sorted_inputs[index_counter].1 {
                         buffer.push(format!("{}{}", intermediate_segment, line_segments[0]));
                         index_counter += 1;
-                        if index_counter == sorted_inputs.len() {return buffer;}
+                        if index_counter == sorted_inputs.len() {
+                            return buffer;
+                        }
                     }
-                    for line_segment in line_segments.iter().take((segments_to_take - counter).min(line_segments.len() - 1)) {
+                    for line_segment in line_segments
+                        .iter()
+                        .take((segments_to_take - counter).min(line_segments.len() - 1))
+                    {
                         if segment_counter == sorted_inputs[index_counter].1 {
                             buffer.push(line_segment.to_string());
                             index_counter += 1;
-                            if index_counter == sorted_inputs.len() {return buffer;}
+                            if index_counter == sorted_inputs.len() {
+                                return buffer;
+                            }
                         }
                     }
                     intermediate_segment = line_segments.last().unwrap().to_string();
-                        
+
                     segment_counter += line_segments.len() - 1;
                     if segment_counter >= segments_to_take {
                         break;
@@ -112,20 +131,24 @@ impl Node for KeyedLoader {
 
     fn reset(&mut self) {
         // Recalculate file sizes
-        let file_sizes = self.files.iter().map(|f| {
-            let file = File::open(f).unwrap();
-            let reader = BufReader::new(file);
-            let mut delimeter_count = 0;
-            if self.delimeter == "\n" {
-                delimeter_count = reader.lines().count();
-            } else {
-                for line in reader.lines().flatten() {
-                    delimeter_count += line.matches(&self.delimeter).count();
+        let file_sizes = self
+            .files
+            .iter()
+            .map(|f| {
+                let file = File::open(f).unwrap();
+                let reader = BufReader::new(file);
+                let mut delimeter_count = 0;
+                if self.delimeter == "\n" {
+                    delimeter_count = reader.lines().count();
+                } else {
+                    for line in reader.lines().flatten() {
+                        delimeter_count += line.matches(&self.delimeter).count();
+                    }
+                    delimeter_count += 1; // Since delimeters divide the examples, there should be 1 more example than delimeter
                 }
-                delimeter_count += 1; // Since delimeters divide the examples, there should be 1 more example than delimeter
-            }
-            delimeter_count
-        }).collect();
+                delimeter_count
+            })
+            .collect();
         self.file_sizes = file_sizes;
     }
 
