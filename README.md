@@ -88,3 +88,6 @@ To Do:
 - [ ] Make tokenizer loading more efficient
 - [ ] Make auto-parallel pipeline Node using rayon
 - [ ] Clear up any discrepencies between batch and single functions (like in Stateful)
+
+## Codebase Visualization
+![Visualization of the codebase](./diagram.svg)
