@@ -1,23 +1,23 @@
-use std::marker::PhantomData;
 use super::super::Node;
+use std::marker::PhantomData;
 
 pub struct Stateful<I, O, S, F: Fn(Vec<I>, &mut S) -> Vec<O>> {
     _phantom: PhantomData<(I, O)>,
     function: F,
-    state: S
+    state: S,
 }
 
-impl <I, O, S, F: Fn(Vec<I>, &mut S) -> Vec<O>>Stateful<I, O, S, F> {
+impl<I, O, S, F: Fn(Vec<I>, &mut S) -> Vec<O>> Stateful<I, O, S, F> {
     pub fn new(function: F, state: S) -> Self {
         Stateful {
             _phantom: PhantomData::default(),
             function,
-            state
+            state,
         }
     }
 }
 
-impl <I, O, S, F: Fn(Vec<I>, &mut S) -> Vec<O>>Node for Stateful<I, O, S, F> {
+impl<I, O, S, F: Fn(Vec<I>, &mut S) -> Vec<O>> Node for Stateful<I, O, S, F> {
     type Input = I;
     type Output = O;
 

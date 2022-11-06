@@ -1,5 +1,5 @@
-use std::{collections::VecDeque, thread};
 use rand::{prelude::SliceRandom, thread_rng};
+use std::{collections::VecDeque, thread};
 
 use crate::pipeline::Node;
 
@@ -9,11 +9,12 @@ pub struct Dataloader<T> {
     load_block_size: usize,
     buffer_size: usize,
     #[allow(clippy::type_complexity)]
-    loading_process: Option<thread::JoinHandle<(Box<dyn Node<Input = (), Output = T> + Send>, Vec<T>)>>,
+    loading_process:
+        Option<thread::JoinHandle<(Box<dyn Node<Input = (), Output = T> + Send>, Vec<T>)>>,
     loading_process_flag: Option<thread_control::Flag>,
 }
 
-impl <T: Send + 'static>Dataloader<T> {
+impl<T: Send + 'static> Dataloader<T> {
     pub fn new(mut pipeline: impl Node<Input = (), Output = T> + Send + 'static) -> Self {
         pipeline.reset();
         Dataloader {
@@ -27,15 +28,26 @@ impl <T: Send + 'static>Dataloader<T> {
     }
 
     pub fn load_block_size(self, load_block_size: usize) -> Self {
-        Dataloader{load_block_size, ..self}
+        Dataloader {
+            load_block_size,
+            ..self
+        }
     }
 
     pub fn buffer_size(self, buffer_size: usize) -> Self {
-        Dataloader{buffer_size, ..self}
+        Dataloader {
+            buffer_size,
+            ..self
+        }
     }
 
     fn load_block(&mut self) {
-        if self.loading_process.is_some() || self.pipeline.is_none() || self.pipeline.as_ref().unwrap().data_remaining(0) == 0 {return;}
+        if self.loading_process.is_some()
+            || self.pipeline.is_none()
+            || self.pipeline.as_ref().unwrap().data_remaining(0) == 0
+        {
+            return;
+        }
 
         // Launch loading thread
         let mut pipeline = std::mem::replace(&mut self.pipeline, None).unwrap();
@@ -77,7 +89,7 @@ impl <T: Send + 'static>Dataloader<T> {
     }
 }
 
-impl <T: Send + 'static>Iterator for Dataloader<T> {
+impl<T: Send + 'static> Iterator for Dataloader<T> {
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {

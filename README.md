@@ -42,10 +42,30 @@ let pipeline = RandomLoader::new(vec!["file1.txt".to_string(), "file2.txt".to_st
       );
 
 ```
-Great! Now our data gets efficiently tokenized as a batch. 
+Great! Now our data gets efficiently tokenized in batches. Right now, we will get single tokenized sentences out of the pipeline one at a time. But what if we wanted to get batches out? Let's use a Batch node:
+```rust
+use dataflow::pipeline::Stateful;
+
+// Our tokenizer
+let tokenizer = dataflow::tokenization::WordpieceTokenizer::load();
+
+// Our pipeline
+let pipeline = RandomLoader::new(vec!["file1.txt".to_string(), "file2.txt".to_string()])
+      .add_fn(|lines| format!("Hello {}", line))
+      .add_node(
+            Stateful::new(
+                  |(lines, tokenizer)| {
+                        tokenizer.batch_tokenize(lines) // batch_tokenize takes in many sentences (Vec<String>) and tokenizes all of them, outputting Vec<Vec<String>>
+                  },
+                  tokenizer // The state we want this Stateful Node to have
+            )
+      )
+      .add_node(Batch::new(64)); // We'll use 64 as the batch size
+```
+That's it! We'll now get batches of 64 tokenized sentences.
 
 ### Loader Nodes
-So far it seems we've only used two types of Nodes, Stateless and Stateful (Stateless was generated when we used .add_fn()). Actually we used three, because RandomLoader is a Node as well! It takes as input Vec<()>, which is what the pipeline will start with, and produces data (Vec<String>) to send through the pipeline.
+So far it seems we've only used two types of Nodes, Stateless and Stateful (Stateless was generated when we used .add_fn(), and a Batch node is Stateless). Actually we used three, because RandomLoader is a Node as well! It takes as input Vec<()>, which is what the pipeline will start with, and produces data (Vec<String>) to send through the pipeline.
   
 ### Custom Nodes
 In fact, you can implement your own Nodes as well, by implementing the `Node` trait! Just implement `fn process(Vec<Input>) -> Vec<Output>` in the trait, and optionally `fn reset(&mut)` which gets called at the beginning of an epoch, and `fn data_remaining(&self) -> usize` which should return how much data remains availiable to the node (the number of lines we haven't loaded yet for RandomLoader, or usize::MAX for a non-loader Node) and you have your own Node to integrate into the pipeline!
@@ -54,7 +74,7 @@ In fact, you can implement your own Nodes as well, by implementing the `Node` tr
 Since we built this cool pipeline, what can we do with it? Well for starters, we could simply call process() and feed in some data, but let's do something cooler. Let's put it in a Dataloader and use it in an ML training loop:
 ```rust
 // Make the dataloader
-let mut dataloader = dataflow::dataloader::Dataloader(pipeline, 64); // We use 64 as the batch size
+let mut dataloader = dataflow::dataloader::Dataloader(pipeline);
 
 // Training loop
 for example in &mut dataloader {
@@ -68,3 +88,6 @@ To Do:
 - [ ] Make tokenizer loading more efficient
 - [ ] Make auto-parallel pipeline Node using rayon
 - [ ] Clear up any discrepencies between batch and single functions (like in Stateful)
+
+## Codebase Visualization
+![Visualization of the codebase](./diagram.svg)

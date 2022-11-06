@@ -1,6 +1,6 @@
-use std::{num::ParseIntError, fmt::Debug, thread};
+use std::{fmt::Debug, num::ParseIntError, thread};
 
-use super::{BatchStateless, Node};
+use crate::pipeline::*;
 
 // Helper functions
 fn add_ten(nums: Vec<i32>) -> Vec<i32> {
@@ -16,7 +16,9 @@ fn greet(inp: Vec<String>) -> Vec<String> {
     inp.into_iter().map(|i| format!("Hello {}", i)).collect()
 }
 fn concat_strings(inp: Vec<(String, String)>) -> Vec<String> {
-    inp.into_iter().map(|(a, b)| format!("{}{}", a, b)).collect()
+    inp.into_iter()
+        .map(|(a, b)| format!("{}{}", a, b))
+        .collect()
 }
 fn unwrap_result<S, F: Debug>(inp: Result<S, F>) -> S {
     inp.unwrap()
@@ -29,7 +31,15 @@ fn test_single_pipeline() {
         .add_batch_fn(greet);
 
     let inputs = vec![12, 3443, 123, 98543];
-    assert_eq!(pipeline.process(inputs), vec!["Hello 22".to_string(), "Hello 3453".to_string(), "Hello 133".to_string(), "Hello 98553".to_string()])
+    assert_eq!(
+        pipeline.process(inputs),
+        vec![
+            "Hello 22".to_string(),
+            "Hello 3453".to_string(),
+            "Hello 133".to_string(),
+            "Hello 98553".to_string()
+        ]
+    )
 }
 
 #[test]
@@ -37,30 +47,73 @@ fn test_pair_pipeline() {
     let pipeline = BatchStateless::new(add_ten)
         .add_fn(convert_to_string)
         .split(
-            BatchStateless::new(greet), 
+            BatchStateless::new(greet),
             BatchStateless::new(convert_to_int)
                 .add_fn(unwrap_result)
                 .add_node(add_ten as fn(Vec<i32>) -> Vec<i32>) // Testing the auto implementation of node on all fn pointers
-                .add_fn(convert_to_string)
-        ).add_node(BatchStateless::new(concat_strings))
+                .add_fn(convert_to_string),
+        )
+        .add_node(BatchStateless::new(concat_strings))
         .add_batch_fn(greet);
     let inputs = vec![12, 3443, 123, 98543];
-    let mut holder = PipelineHolder{pipeline: Some(pipeline)};
+    let mut holder = PipelineHolder {
+        pipeline: Some(pipeline),
+    };
     let outputs = run_pipeline(&mut holder, inputs);
 
-    assert_eq!(outputs, vec!["Hello Hello 2232".to_string(), "Hello Hello 34533463".to_string(), "Hello Hello 133143".to_string(), "Hello Hello 9855398563".to_string()]);
+    println!(
+        "Examples left: {}",
+        holder.pipeline.unwrap().data_remaining(0)
+    );
+    assert_eq!(
+        outputs,
+        vec![
+            "Hello Hello 2232".to_string(),
+            "Hello Hello 34533463".to_string(),
+            "Hello Hello 133143".to_string(),
+            "Hello Hello 9855398563".to_string()
+        ]
+    );
+}
+
+#[test]
+fn test_map_reduce_pipeline() {
+    let mut pipeline = MapReduce::new(
+        // Count even and odd numbers
+        |mut num: i32| {
+            num += 10;
+            vec![(num % 2 == 0, num)]
+        },
+        |(is_even, nums)| {
+            if is_even {
+                vec![format!("Even: {:?}", nums)]
+            } else {
+                vec![format!("Odd: {:?}", nums)]
+            }
+        },
+    );
+
+    let inputs = vec![12, 3443, 124, 98543];
+    assert_eq!(
+        pipeline.process(inputs),
+        vec!["Odd: [3453, 98553]", "Even: [22, 134]",]
+    )
 }
 
 struct PipelineHolder<N: Node> {
-    pub pipeline: Option<N>
+    pub pipeline: Option<N>,
 }
 
-fn run_pipeline<N: Node + Send + 'static>(pipeline_holder: &mut PipelineHolder<N>, input: Vec<N::Input>) -> Vec<N::Output> 
-where N::Input: Send, N::Output: Send {
+fn run_pipeline<N: Node + Send + 'static>(
+    pipeline_holder: &mut PipelineHolder<N>,
+    input: Vec<N::Input>,
+) -> Vec<N::Output>
+where
+    N::Input: Send,
+    N::Output: Send,
+{
     let mut pipeline = std::mem::replace(&mut pipeline_holder.pipeline, None).unwrap();
-    let handle = thread::spawn(move || {
-        (pipeline.process(input), pipeline)
-    });
+    let handle = thread::spawn(move || (pipeline.process(input), pipeline));
     let (output, pipeline) = handle.join().unwrap();
     pipeline_holder.pipeline = Some(pipeline);
     output

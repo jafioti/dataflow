@@ -11,11 +11,16 @@ pub struct BPETokenizer {
 
 impl Tokenizer for BPETokenizer {
     fn load() -> Self {
-        use tokenizers::models::bpe::BPE;
         use serde_json::Value;
+        use tokenizers::models::bpe::BPE;
         // Create token2index map
         // Open vocab file
-        let json: HashMap<String, Value> = serde_json::from_str(&include_str!("../resources/bpe_vocab.json").replace('/', "").replace('Ġ', "")).expect("Error parsing BPE vocab file!");
+        let json: HashMap<String, Value> = serde_json::from_str(
+            &include_str!("../resources/bpe_vocab.json")
+                .replace('/', "")
+                .replace('Ġ', ""),
+        )
+        .expect("Error parsing BPE vocab file!");
         // Build sorted vector of tokens from hashmap
         let mut token_vec: Vec<String> = vec![String::from(""); 50265]; // Happen to know the largest index in the json is 50264, this is a bad system
         for token in json.keys() {
@@ -31,14 +36,22 @@ impl Tokenizer for BPETokenizer {
         // Create tokenizer
         let bpe_builder = BPE::builder();
         let mut merges: Vec<(String, String)> = Vec::new();
-        let lines: Vec<&str> = include_str!("../resources/bpe_merges.txt").split('\n').collect();
+        let lines: Vec<&str> = include_str!("../resources/bpe_merges.txt")
+            .split('\n')
+            .collect();
         for line in lines {
-            let line = String::from(line).replace('Ġ', "").replace('\n', "").replace("##", "");
+            let line = String::from(line)
+                .replace('Ġ', "")
+                .replace('\n', "")
+                .replace("##", "");
             // Filter out junk
             if line.contains(' ') && !line.contains('#') {
                 let line: Vec<&str> = line.split(' ').collect();
                 // Make sure vocab contains both tokens and combined token
-                if token2index.contains_key(&line[0].to_string()) && token2index.contains_key(&line[1].to_string()) && token2index.contains_key(&format!("{}{}", line[0], line[1])) {
+                if token2index.contains_key(&line[0].to_string())
+                    && token2index.contains_key(&line[1].to_string())
+                    && token2index.contains_key(&format!("{}{}", line[0], line[1]))
+                {
                     merges.push((line[0].to_string(), line[1].to_string()));
                 }
             }
@@ -47,10 +60,11 @@ impl Tokenizer for BPETokenizer {
         let bpe_builder = bpe_builder.vocab_and_merges(token2index, merges);
         let bpe = bpe_builder
             .unk_token("[UNK]".into())
-            .build().expect("BPE Tokenizer failed to build!");
+            .build()
+            .expect("BPE Tokenizer failed to build!");
 
         BPETokenizer {
-            hf_tokenizer: HFTokenizer::new(bpe)
+            hf_tokenizer: HFTokenizer::new(bpe),
         }
     }
 
@@ -59,7 +73,10 @@ impl Tokenizer for BPETokenizer {
         // Lowercase
         let string = string.to_lowercase();
         // Create tokenizer and tokenize
-        let encoding = self.hf_tokenizer.encode(string, false).expect("BPE tokenization failed!");
+        let encoding = self
+            .hf_tokenizer
+            .encode(string, false)
+            .expect("BPE tokenization failed!");
         // Convert back to string
         encoding.get_tokens().to_vec()
     }
@@ -67,14 +84,17 @@ impl Tokenizer for BPETokenizer {
     fn batch_tokenize(&self, strings: Vec<String>) -> Vec<Vec<String>> {
         tokenizers::utils::parallelism::set_parallelism(true);
         // Lowercase
-        let strings = strings.iter().map(|a| {a.to_lowercase()}).collect();
+        let strings = strings.iter().map(|a| a.to_lowercase()).collect();
         // Create tokenizer and tokenize
-        let encodings = self.hf_tokenizer.encode_batch(strings, false).expect("BPE tokenization failed!");
+        let encodings = self
+            .hf_tokenizer
+            .encode_batch(strings, false)
+            .expect("BPE tokenization failed!");
         // Convert back to strings
         let mut tokens: Vec<Vec<String>> = Vec::with_capacity(encodings.len());
         for encoding in encodings {
             tokens.push(encoding.get_tokens().to_vec());
-        };
+        }
         tokens
     }
 
@@ -83,8 +103,6 @@ impl Tokenizer for BPETokenizer {
     }
 
     fn batch_untokenize(&self, tokens: Vec<Vec<String>>) -> Vec<String> {
-        tokens.iter().map(|tokens| {
-            tokens.join("")
-        }).collect()
+        tokens.iter().map(|tokens| tokens.join("")).collect()
     }
 }

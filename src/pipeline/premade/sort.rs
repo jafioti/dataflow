@@ -1,21 +1,21 @@
-use std::{marker::PhantomData, cmp::Ordering};
 use crate::pipeline::Node;
+use std::{cmp::Ordering, marker::PhantomData};
 
 pub struct Sort<T, F: Fn(&T, &T) -> Ordering> {
     _phantom: PhantomData<T>,
-    sort_fn: F
+    sort_fn: F,
 }
 
-impl <T, F: Fn(&T, &T) -> Ordering>Sort<T, F> {
+impl<T, F: Fn(&T, &T) -> Ordering> Sort<T, F> {
     pub fn new(sort_fn: F) -> Self {
-        Sort { 
-            _phantom: PhantomData::default(), 
-            sort_fn
+        Sort {
+            _phantom: PhantomData::default(),
+            sort_fn,
         }
     }
 }
 
-impl <T, F: Fn(&T, &T) -> Ordering>Node for Sort<T, F> {
+impl<T, F: Fn(&T, &T) -> Ordering> Node for Sort<T, F> {
     type Input = T;
     type Output = T;
 

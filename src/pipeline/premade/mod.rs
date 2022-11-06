@@ -6,3 +6,5 @@ mod batch;
 pub use batch::*;
 mod sort;
 pub use sort::*;
+mod mapreduce;
+pub use mapreduce::*;
