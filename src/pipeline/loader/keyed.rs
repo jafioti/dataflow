@@ -129,7 +129,7 @@ impl Node for KeyedLoader {
         self.file_sizes = file_sizes;
     }
 
-    fn data_remaining(&self) -> usize {
-        usize::MAX
+    fn data_remaining(&self, before: usize) -> usize {
+        before
     }
 }

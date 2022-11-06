@@ -59,7 +59,7 @@ impl Node for RandomLoader {
 
     fn process(&mut self, input: Vec<Self::Input>) -> Vec<Self::Output> {
         // Load next input.len() examples in order, then shuffle them
-        let mut examples_to_load = self.load_order[self.currently_loaded_index..self.currently_loaded_index + input.len()].to_vec();
+        let mut examples_to_load = self.load_order[self.currently_loaded_index..self.load_order.len().min(self.currently_loaded_index + input.len())].to_vec();
         examples_to_load.sort_unstable();
         
         // Run through each example in each file
@@ -174,7 +174,7 @@ impl Node for RandomLoader {
         self.currently_loaded_index = 0;
     }
 
-    fn data_remaining(&self) -> usize {
+    fn data_remaining(&self, _before: usize) -> usize {
         self.load_order.len() - self.currently_loaded_index
     }
 }

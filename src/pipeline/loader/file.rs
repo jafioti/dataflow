@@ -40,7 +40,7 @@ impl Node for FileLoader {
         self.currently_loaded_index = 0;
     }
 
-    fn data_remaining(&self) -> usize {
+    fn data_remaining(&self, _before: usize) -> usize {
         self.load_order.len() - self.currently_loaded_index
     }
 }

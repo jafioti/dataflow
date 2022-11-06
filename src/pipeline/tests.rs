@@ -48,7 +48,6 @@ fn test_pair_pipeline() {
     let mut holder = PipelineHolder{pipeline: Some(pipeline)};
     let outputs = run_pipeline(&mut holder, inputs);
 
-    println!("Examples left: {}", holder.pipeline.unwrap().data_remaining());
     assert_eq!(outputs, vec!["Hello Hello 2232".to_string(), "Hello Hello 34533463".to_string(), "Hello Hello 133143".to_string(), "Hello Hello 9855398563".to_string()]);
 }
 

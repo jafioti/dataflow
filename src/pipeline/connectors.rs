@@ -40,8 +40,8 @@ impl <N1: Node, N2: Node<Input = N1::Output>>Node for Connector<N1, N2> {
         self.node2.process(self.node1.process(input))    
     }
 
-    fn data_remaining(&self) -> usize {
-        usize::min(self.node1.data_remaining(), self.node2.data_remaining())
+    fn data_remaining(&self, before: usize) -> usize {
+        self.node2.data_remaining(self.node1.data_remaining(before))
     }
 
     fn reset(&mut self) {
@@ -76,7 +76,7 @@ impl <N1: Node, N2: Node>Node for Pair<N1, N2> {
         self.node2.reset();
     }
 
-    fn data_remaining(&self) -> usize {
-        usize::min(self.node1.data_remaining(), self.node2.data_remaining())
+    fn data_remaining(&self, before: usize) -> usize {
+        usize::min(self.node1.data_remaining(before), self.node2.data_remaining(before))
     }
 }

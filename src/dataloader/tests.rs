@@ -33,7 +33,7 @@ impl Node for CreateRange {
         self.current_progress = 0;
     }
 
-    fn data_remaining(&self) -> usize {
+    fn data_remaining(&self, _before: usize) -> usize {
         self.nums_to_make.len() - self.current_progress
     }
 }

@@ -9,7 +9,7 @@ pub trait Node {
     /// Reset signal propogates through pipeline
     fn reset(&mut self) {}
     /// Get number of examples left
-    fn data_remaining(&self) -> usize {usize::MAX} // Defaults to max for non-source functions
+    fn data_remaining(&self, before: usize) -> usize {before} // Defaults to same as previous remaining data
 
     fn add_node<N: Node<Input = Self::Output>>(self, node: N) -> Connector<Self, N> where Self: std::marker::Sized {
         Connector::new(self, node)
