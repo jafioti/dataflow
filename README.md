@@ -86,10 +86,12 @@ for example in &mut dataloader {
 ```
 
 To Do:
+- [ ] Spin out all NLP related stuff into a dataflow-nlp crate.
 - [ ] Make dataloader use a multiqueue instead of draining all examples into buffer on main thread
-- [ ] Make tokenizer loading more efficient
 - [ ] Make auto-parallel pipeline Node using rayon
 - [ ] Clear up any discrepencies between batch and single functions (like in Stateful)
+- [ ] Add tokenizer as a node
+- [ ] Add async ability and remote sources.
 
 ## Codebase Visualization
 ![Visualization of the codebase](./diagram.svg)
