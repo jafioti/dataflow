@@ -1,3 +1,5 @@
+use crate::pipeline::ExplicitNode;
+
 use super::Tokenizer;
 use serde::{Deserialize, Serialize};
 use tokenizers::Tokenizer as HFTokenizer;
@@ -36,8 +38,6 @@ impl Tokenizer for WordpieceTokenizer {
 
     fn tokenize(&self, string: &str) -> Vec<String> {
         tokenizers::utils::parallelism::set_parallelism(true);
-        // Lowercase
-        let string = string.to_lowercase();
         // Create tokenizer and tokenize
         let encoding = self
             .hf_tokenizer
@@ -49,8 +49,6 @@ impl Tokenizer for WordpieceTokenizer {
 
     fn batch_tokenize(&self, strings: Vec<String>) -> Vec<Vec<String>> {
         tokenizers::utils::parallelism::set_parallelism(true);
-        // Lowercase
-        let strings = strings.iter().map(|a| (*a).to_lowercase()).collect();
         // Create tokenizer and tokenize
         let encodings = self
             .hf_tokenizer
@@ -108,5 +106,23 @@ impl Tokenizer for WordpieceTokenizer {
             }
         }
         untokenized_strings
+    }
+}
+
+impl ExplicitNode<String, Vec<String>> for WordpieceTokenizer {
+    fn process(&mut self, input: String) -> Vec<String> {
+        self.tokenize(&input)
+    }
+}
+
+impl ExplicitNode<&str, Vec<String>> for WordpieceTokenizer {
+    fn process(&mut self, input: &str) -> Vec<String> {
+        self.tokenize(input)
+    }
+}
+
+impl ExplicitNode<Vec<String>, Vec<Vec<String>>> for WordpieceTokenizer {
+    fn process(&mut self, input: Vec<String>) -> Vec<Vec<String>> {
+        self.batch_tokenize(input)
     }
 }

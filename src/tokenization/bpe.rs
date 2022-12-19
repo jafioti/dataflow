@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use crate::pipeline::ExplicitNode;
+
 use super::Tokenizer;
 use serde::{Deserialize, Serialize};
 use tokenizers::Tokenizer as HFTokenizer;
@@ -41,8 +43,7 @@ impl Tokenizer for BPETokenizer {
             .collect();
         for line in lines {
             let line = String::from(line)
-                .replace('Ġ', "")
-                .replace('\n', "")
+                .replace(['Ġ', '\n'], "")
                 .replace("##", "");
             // Filter out junk
             if line.contains(' ') && !line.contains('#') {
@@ -70,8 +71,6 @@ impl Tokenizer for BPETokenizer {
 
     fn tokenize(&self, string: &str) -> Vec<String> {
         tokenizers::utils::parallelism::set_parallelism(true);
-        // Lowercase
-        let string = string.to_lowercase();
         // Create tokenizer and tokenize
         let encoding = self
             .hf_tokenizer
@@ -83,8 +82,6 @@ impl Tokenizer for BPETokenizer {
 
     fn batch_tokenize(&self, strings: Vec<String>) -> Vec<Vec<String>> {
         tokenizers::utils::parallelism::set_parallelism(true);
-        // Lowercase
-        let strings = strings.iter().map(|a| a.to_lowercase()).collect();
         // Create tokenizer and tokenize
         let encodings = self
             .hf_tokenizer
@@ -104,5 +101,23 @@ impl Tokenizer for BPETokenizer {
 
     fn batch_untokenize(&self, tokens: Vec<Vec<String>>) -> Vec<String> {
         tokens.iter().map(|tokens| tokens.join("")).collect()
+    }
+}
+
+impl ExplicitNode<String, Vec<String>> for BPETokenizer {
+    fn process(&mut self, input: String) -> Vec<String> {
+        self.tokenize(&input)
+    }
+}
+
+impl ExplicitNode<&str, Vec<String>> for BPETokenizer {
+    fn process(&mut self, input: &str) -> Vec<String> {
+        self.tokenize(input)
+    }
+}
+
+impl ExplicitNode<Vec<String>, Vec<Vec<String>>> for BPETokenizer {
+    fn process(&mut self, input: Vec<String>) -> Vec<Vec<String>> {
+        self.batch_tokenize(input)
     }
 }

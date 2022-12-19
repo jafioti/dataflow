@@ -1,3 +1,5 @@
+use crate::pipeline::ExplicitNode;
+
 use super::Tokenizer;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -78,4 +80,22 @@ fn split_keep(text: &str) -> Vec<&str> {
         result.push(&text[last_match..]);
     }
     result
+}
+
+impl ExplicitNode<String, Vec<String>> for SentenceTokenizer {
+    fn process(&mut self, input: String) -> Vec<String> {
+        self.tokenize(&input)
+    }
+}
+
+impl ExplicitNode<&str, Vec<String>> for SentenceTokenizer {
+    fn process(&mut self, input: &str) -> Vec<String> {
+        self.tokenize(input)
+    }
+}
+
+impl ExplicitNode<Vec<String>, Vec<Vec<String>>> for SentenceTokenizer {
+    fn process(&mut self, input: Vec<String>) -> Vec<Vec<String>> {
+        self.batch_tokenize(input)
+    }
 }

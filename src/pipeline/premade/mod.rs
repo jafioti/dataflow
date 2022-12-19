@@ -8,3 +8,5 @@ mod sort;
 pub use sort::*;
 mod mapreduce;
 pub use mapreduce::*;
+mod map;
+pub use map::*;

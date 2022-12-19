@@ -4,18 +4,18 @@ use std::{collections::VecDeque, thread};
 use crate::pipeline::Node;
 
 pub struct Dataloader<T> {
-    pipeline: Option<Box<dyn Node<Input = (), Output = T> + Send>>,
+    pipeline: Option<Box<dyn Node<Input = Vec<()>, Output = Vec<T>> + Send>>,
     buffer: VecDeque<T>,
     load_block_size: usize,
     buffer_size: usize,
     #[allow(clippy::type_complexity)]
     loading_process:
-        Option<thread::JoinHandle<(Box<dyn Node<Input = (), Output = T> + Send>, Vec<T>)>>,
+        Option<thread::JoinHandle<(Box<dyn Node<Input = Vec<()>, Output = Vec<T>> + Send>, Vec<T>)>>,
     loading_process_flag: Option<thread_control::Flag>,
 }
 
 impl<T: Send + 'static> Dataloader<T> {
-    pub fn new(mut pipeline: impl Node<Input = (), Output = T> + Send + 'static) -> Self {
+    pub fn new(mut pipeline: impl Node<Input = Vec<()>, Output = Vec<T>> + Send + 'static) -> Self {
         pipeline.reset();
         Dataloader {
             pipeline: Some(Box::new(pipeline)),

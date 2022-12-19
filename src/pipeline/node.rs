@@ -1,43 +1,26 @@
-use super::{BatchStateless, Connector, Duplicator, Pair, SingleStateless};
+use std::marker::PhantomData;
+
+use super::{Connector, Duplicator, Pair};
 
 pub trait Node {
     type Input;
     type Output;
 
     /// Process a batch of data
-    fn process(&mut self, input: Vec<Self::Input>) -> Vec<Self::Output>;
+    fn process(&mut self, input: Self::Input) -> Self::Output;
     /// Reset signal propogates through pipeline
     fn reset(&mut self) {}
     /// Get number of examples left
     fn data_remaining(&self, before: usize) -> usize {before} // Defaults to same as previous remaining data
 
-    fn add_node<N: Node<Input = Self::Output>>(self, node: N) -> Connector<Self, N>
+    fn node<O, N: ExplicitNode<Self::Output, O>, T: Into<NodeContainer<Self::Output, O, N>>>(self, node: T) -> Connector<Self, NodeContainer<Self::Output, O, N>>
     where
         Self: std::marker::Sized,
     {
-        Connector::new(self, node)
-    }
-
-    /// Add function to pipeline
-    fn add_batch_fn<O, F: Fn(Vec<Self::Output>) -> Vec<O>>(
-        self,
-        function: F,
-    ) -> Connector<Self, BatchStateless<Self::Output, O, F>>
-    where
-        Self: std::marker::Sized,
-    {
-        Connector::new(self, BatchStateless::new(function))
-    }
-
-    /// Add function that takes a single datapoint and outputs a single datapoint
-    fn add_fn<O, F: Fn(Self::Output) -> O + Send + Sync>(
-        self,
-        function: F,
-    ) -> Connector<Self, SingleStateless<Self::Output, O, F>>
-    where
-        Self: std::marker::Sized,
-    {
-        Connector::new(self, SingleStateless::new(function))
+        Connector {
+            node1: self,
+            node2: node.into()
+        }
     }
 
     #[allow(clippy::type_complexity)]
@@ -50,10 +33,13 @@ pub trait Node {
         Self: std::marker::Sized,
         Self::Output: Clone,
     {
-        Connector::new(
-            Connector::new(self, Duplicator::default()),
-            Pair::new(node1, node2),
-        )
+        Connector {
+            node1: Connector {
+                node1: self, 
+                node2: Duplicator::default()
+            },
+            node2: Pair::new(node1, node2),
+        }
     }
 
     fn pair<O1, O2, N3: Node<Input = O1>, N4: Node<Input = O2>>(
@@ -65,24 +51,54 @@ pub trait Node {
         Self: std::marker::Sized,
         Self: Node<Output = (O1, O2)>,
     {
-        Connector::new(self, Pair::new(node1, node2))
+        Connector {
+            node1: self, 
+            node2: Pair::new(node1, node2)
+        }
     }
 }
 
-// Attempt at implementing node for every function
-// impl <I, O, F: Fn(I) -> O> Node for F {
-//     type Input = I;
-//     type Output = O;
-//     fn process(&mut self, input: Vec<Self::Input>) -> Vec<Self::Output> {
-//         input.into_iter().map(self).collect()
-//     }
-// }
+// IntoNode System
+pub trait ExplicitNode<I, O> {
+    /// Process a batch of data
+    fn process(&mut self, input: I) -> O;
+    /// Reset signal propogates through pipeline
+    fn reset(&mut self) {}
+    /// Get number of examples left, defaults to same as previous remaining data
+    fn data_remaining(&self, before: usize) -> usize {before}
+}
 
-// Current implementation of node for every function pointer, requires an ugly cast to use though
-impl<I, O> Node for fn(Vec<I>) -> Vec<O> {
+impl <I, O, F> ExplicitNode<I, O> for F
+where F: Fn(I) -> O {
+    fn process(&mut self, input: I) -> O {
+        (self)(input)
+    }
+}
+
+pub struct NodeContainer<I, O, N: ExplicitNode<I, O>> {
+    node: N,
+    _phantom: PhantomData<(I, O)>
+}
+
+impl <I, O, N: ExplicitNode<I, O>> From<N> for NodeContainer<I, O, N> {
+    fn from(node: N) -> Self {
+        NodeContainer { node, _phantom: Default::default() }
+    }
+}
+
+impl <I, O, N: ExplicitNode<I, O>> Node for NodeContainer<I, O, N> {
     type Input = I;
     type Output = O;
-    fn process(&mut self, input: Vec<Self::Input>) -> Vec<Self::Output> {
-        (self)(input)
+
+    fn process(&mut self, input: Self::Input) -> Self::Output {
+        self.node.process(input)
+    }
+
+    fn reset(&mut self) {
+        self.node.reset();
+    }
+
+    fn data_remaining(&self, before: usize) -> usize {
+        self.node.data_remaining(before)
     }
 }

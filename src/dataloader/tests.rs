@@ -1,5 +1,5 @@
 use super::Dataloader;
-use crate::pipeline::{Batch, Node};
+use crate::pipeline::{Batch, Node, MapTrait};
 use rand::{prelude::SliceRandom, thread_rng};
 
 /// A "loader" to load a full range of numbers randomly
@@ -18,10 +18,10 @@ impl CreateRange {
 }
 
 impl Node for CreateRange {
-    type Input = ();
-    type Output = usize;
+    type Input = Vec<()>;
+    type Output = Vec<usize>;
 
-    fn process(&mut self, input: Vec<Self::Input>) -> Vec<Self::Output> {
+    fn process(&mut self, input: Self::Input) -> Self::Output {
         let data =
             self.nums_to_make[self.current_progress..self.current_progress + input.len()].to_vec();
         self.current_progress += input.len();
@@ -42,8 +42,8 @@ impl Node for CreateRange {
 fn test_dataloader() {
     // Write a dataloader test
     let pipeline = CreateRange::new(10_000)
-        .add_fn(|i| i * 10)
-        .add_node(Batch::new(10));
+        .map(|i| i * 10)
+        .node(Batch::new(10));
     let mut loader = Dataloader::new(pipeline);
     assert_eq!(loader.len(), 1000);
 

@@ -26,13 +26,13 @@ fn unwrap_result<S, F: Debug>(inp: Result<S, F>) -> S {
 
 #[test]
 fn test_single_pipeline() {
-    let mut pipeline = BatchStateless::new(add_ten)
-        .add_fn(convert_to_string)
-        .add_batch_fn(greet);
+    let mut pipeline = Stateless::new(add_ten)
+        .map(convert_to_string)
+        .node(greet);
 
     let inputs = vec![12, 3443, 123, 98543];
     assert_eq!(
-        pipeline.process(inputs),
+        Node::process(&mut pipeline, inputs),
         vec![
             "Hello 22".to_string(),
             "Hello 3453".to_string(),
@@ -44,17 +44,18 @@ fn test_single_pipeline() {
 
 #[test]
 fn test_pair_pipeline() {
-    let pipeline = BatchStateless::new(add_ten)
-        .add_fn(convert_to_string)
+    let pipeline = Stateless::new(add_ten)
+        .map(convert_to_string)
         .split(
-            BatchStateless::new(greet),
-            BatchStateless::new(convert_to_int)
-                .add_fn(unwrap_result)
-                .add_node(add_ten as fn(Vec<i32>) -> Vec<i32>) // Testing the auto implementation of node on all fn pointers
-                .add_fn(convert_to_string),
+            Stateless::new(greet),
+            Stateless::new(convert_to_int)
+                .map(unwrap_result)
+                .node(add_ten as fn(Vec<i32>) -> Vec<i32>) // Testing the auto implementation of node on all fn pointers
+                .map(convert_to_string),
         )
-        .add_node(BatchStateless::new(concat_strings))
-        .add_batch_fn(greet);
+        .node(|(a, b): (Vec<String>, Vec<String>)| a.into_iter().zip(b.into_iter()).collect::<Vec<(String, String)>>())
+        .node(concat_strings)
+        .node(greet);
     let inputs = vec![12, 3443, 123, 98543];
     let mut holder = PipelineHolder {
         pipeline: Some(pipeline),
@@ -63,7 +64,7 @@ fn test_pair_pipeline() {
 
     println!(
         "Examples left: {}",
-        holder.pipeline.unwrap().data_remaining(0)
+        Node::data_remaining(&holder.pipeline.unwrap(), 0)
     );
     assert_eq!(
         outputs,
@@ -95,7 +96,7 @@ fn test_map_reduce_pipeline() {
 
     let inputs = vec![12, 3443, 124, 98543];
     assert_eq!(
-        pipeline.process(inputs),
+        Node::process(&mut pipeline, inputs),
         vec!["Odd: [3453, 98553]", "Even: [22, 134]",]
     )
 }
@@ -106,8 +107,8 @@ struct PipelineHolder<N: Node> {
 
 fn run_pipeline<N: Node + Send + 'static>(
     pipeline_holder: &mut PipelineHolder<N>,
-    input: Vec<N::Input>,
-) -> Vec<N::Output>
+    input: N::Input,
+) -> N::Output
 where
     N::Input: Send,
     N::Output: Send,

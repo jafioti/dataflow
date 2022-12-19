@@ -21,10 +21,10 @@ impl FileLoader {
 }
 
 impl Node for FileLoader {
-    type Input = ();
-    type Output = Vec<u8>;
+    type Input = Vec<()>;
+    type Output = Vec<Vec<u8>>;
 
-    fn process(&mut self, input: Vec<Self::Input>) -> Vec<Self::Output> {
+    fn process(&mut self, input: Self::Input) -> Self::Output {
         let mut read_data = vec![];
         for index in self.load_order[self.currently_loaded_index..input.len()].iter() {
             let mut data = Vec::new();

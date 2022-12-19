@@ -1,49 +1,37 @@
-use crate::pipeline::Node;
+use crate::pipeline::{Node, ExplicitNode};
 use std::marker::PhantomData;
 
-pub struct BatchStateless<I, O, F: Fn(Vec<I>) -> Vec<O>> {
+pub struct Stateless<I, O, F: Fn(I) -> O> {
     _phantom: PhantomData<(I, O)>,
     function: F,
 }
 
-impl<I, O, F: Fn(Vec<I>) -> Vec<O>> BatchStateless<I, O, F> {
+impl<I, O, F: Fn(I) -> O> Stateless<I, O, F> {
     pub fn new(function: F) -> Self {
-        BatchStateless {
+        Stateless {
             _phantom: PhantomData::default(),
             function,
         }
     }
 }
 
-impl<I, O, F: Fn(Vec<I>) -> Vec<O>> Node for BatchStateless<I, O, F> {
-    type Input = I;
-    type Output = O;
-
-    fn process(&mut self, input: Vec<Self::Input>) -> Vec<Self::Output> {
+impl<I, O, F: Fn(I) -> O> ExplicitNode<I, O> for Stateless<I, O, F> {
+    fn process(&mut self, input: I) -> O {
         (self.function)(input)
     }
 }
 
-/// Really just so that we can use add_fn() on the node, there must be a better way than creating a node just for this
-pub struct SingleStateless<I, O, F: Fn(I) -> O> {
-    _phantom: PhantomData<(I, O)>,
-    function: F,
-}
-
-impl<I, O, F: Fn(I) -> O> SingleStateless<I, O, F> {
-    pub fn new(function: F) -> Self {
-        SingleStateless {
-            _phantom: PhantomData::default(),
-            function,
-        }
-    }
-}
-
-impl<I, O, F: Fn(I) -> O> Node for SingleStateless<I, O, F> {
+impl<I, O, F: Fn(I) -> O> Node for Stateless<I, O, F> {
     type Input = I;
     type Output = O;
 
-    fn process(&mut self, input: Vec<Self::Input>) -> Vec<Self::Output> {
-        input.into_iter().map(&self.function).collect()
+    fn process(&mut self, input: Self::Input) -> Self::Output {
+        (self.function)(input)
+    }
+}
+
+impl<I, O> From<fn(I) -> O> for Stateless<I, O, fn(I) -> O> {
+    fn from(f: fn(I) -> O) -> Self {
+        Stateless::new(f)
     }
 }

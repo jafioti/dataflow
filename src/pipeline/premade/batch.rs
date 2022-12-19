@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use itertools::Itertools;
 
-use crate::pipeline::Node;
+use crate::pipeline::{Node, ExplicitNode};
 
 /// Create batches from examples
 pub struct Batch<T> {
@@ -19,10 +19,8 @@ impl<T> Batch<T> {
     }
 }
 
-impl<T> Node for Batch<T> {
-    type Input = T;
-    type Output = Vec<T>;
-    fn process(&mut self, mut input: Vec<Self::Input>) -> Vec<Self::Output> {
+impl<T> ExplicitNode<Vec<T>, Vec<Vec<T>>> for Batch<T> {
+    fn process(&mut self, mut input: Vec<T>) -> Vec<Vec<T>> {
         let mut batches = Vec::with_capacity(input.len() / self.batch_size);
         while !input.is_empty() {
             batches.push(
@@ -40,22 +38,15 @@ impl<T> Node for Batch<T> {
 }
 
 /// Create batches from examples
+#[derive(Default)]
 pub struct ArrayBatch<const B: usize, T> {
     _phantom: PhantomData<T>,
 }
 
-impl <const B: usize, T>ArrayBatch<B, T> {
-    pub fn new() -> Self {
-        Self {
-            _phantom: PhantomData::default()
-        }
-    }
-}
-
 impl <const B: usize, T>Node for ArrayBatch<B, T> {
-    type Input = T;
-    type Output = [T; B];
-    fn process(&mut self, mut input: Vec<Self::Input>) -> Vec<Self::Output> {
+    type Input = Vec<T>;
+    type Output = Vec<[T; B]>;
+    fn process(&mut self, input: Self::Input) -> Self::Output {
         let mut batches = Vec::with_capacity(input.len() / B);
         let chunks = input.into_iter().chunks(B);
         let mut chunks_iter = chunks.into_iter();

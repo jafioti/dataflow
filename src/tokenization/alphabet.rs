@@ -1,3 +1,5 @@
+use crate::pipeline::ExplicitNode;
+
 use super::Tokenizer;
 use serde::{Deserialize, Serialize};
 
@@ -27,5 +29,23 @@ impl Tokenizer for AlphabetTokenizer {
 
     fn batch_untokenize(&self, tokens: Vec<Vec<String>>) -> Vec<String> {
         tokens.iter().map(|tokens| tokens.join("")).collect()
+    }
+}
+
+impl ExplicitNode<String, Vec<String>> for AlphabetTokenizer {
+    fn process(&mut self, input: String) -> Vec<String> {
+        self.tokenize(&input)
+    }
+}
+
+impl ExplicitNode<&str, Vec<String>> for AlphabetTokenizer {
+    fn process(&mut self, input: &str) -> Vec<String> {
+        self.tokenize(input)
+    }
+}
+
+impl ExplicitNode<Vec<String>, Vec<Vec<String>>> for AlphabetTokenizer {
+    fn process(&mut self, input: Vec<String>) -> Vec<Vec<String>> {
+        self.batch_tokenize(input)
     }
 }

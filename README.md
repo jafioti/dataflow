@@ -17,31 +17,22 @@ fn main() {
   let pipeline = RandomLoader::new(vec!["file1.txt".to_string(), "file2.txt".to_string()]);
 }
 ```
-The RandomLoader by default loads individual lines randomly from files. Next add a transformation to it with the add_fn() function:
+The RandomLoader by default loads individual lines randomly from files. Next add a transformation to it with the map() function:
 ```rust
 let pipeline = RandomLoader::new(vec!["file1.txt".to_string(), "file2.txt".to_string()])
-      .add_fn(|line| format!("Hello {}", line));
+      .map(|line| format!("Hello {}", line));
 ```
-This creates a new Stateless Node, which just runs the closure on the data. This closure takes in a single datapoint and outputs a single datapoint. If we want to do batch processing, we can use `.add_batch_fn()` which takes a closure that can process a batch at a time.
+This creates a new Node, which processes the data one sample at a time. Important node: **All functions and closures are also Nodes!** This means that whenever we want to add a node, we could simple use a function. In this case, the closure takes in a single datapoint and outputs a single datapoint. If we want to do batch processing, we can use `.node()` which takes a Node that can process a batch at a time.
 
-Now we've added "Hello " to every line, let's create a Stateful Node to hold a Tokenizer and make it tokenize our data:
+Now we've added "Hello " to every line, let's create a tokenizer and put it in our pipeline:
 ```rust
-use dataflow::pipeline::Stateful;
-
 // Our tokenizer
 let tokenizer = dataflow::tokenization::WordpieceTokenizer::load();
 
 // Our pipeline
 let pipeline = RandomLoader::new(vec!["file1.txt".to_string(), "file2.txt".to_string()])
-      .add_fn(|lines| format!("Hello {}", line))
-      .add_node(
-            Stateful::new(
-                  |(lines, tokenizer)| {
-                        tokenizer.batch_tokenize(lines) // batch_tokenize takes in many sentences (Vec<String>) and tokenizes all of them, outputting Vec<Vec<String>>
-                  },
-                  tokenizer // The state we want this Stateful Node to have
-            )
-      );
+      .map(|lines| format!("Hello {}", line))
+      .node(tokenizer); // This will tokenize the strings in batches
 
 ```
 Great! Now our data gets efficiently tokenized in batches. Right now, we will get single tokenized sentences out of the pipeline one at a time. But what if we wanted to get batches out? Let's use a Batch node:
@@ -53,16 +44,9 @@ let tokenizer = dataflow::tokenization::WordpieceTokenizer::load();
 
 // Our pipeline
 let pipeline = RandomLoader::new(vec!["file1.txt".to_string(), "file2.txt".to_string()])
-      .add_fn(|lines| format!("Hello {}", line))
-      .add_node(
-            Stateful::new(
-                  |(lines, tokenizer)| {
-                        tokenizer.batch_tokenize(lines) // batch_tokenize takes in many sentences (Vec<String>) and tokenizes all of them, outputting Vec<Vec<String>>
-                  },
-                  tokenizer // The state we want this Stateful Node to have
-            )
-      )
-      .add_node(Batch::new(64)); // We'll use 64 as the batch size
+      .map(|lines| format!("Hello {}", line))
+      .node(tokenizer) // This will tokenize the strings in batches
+      .node(Batch::new(64)); // We'll use 64 as the batch size
 ```
 That's it! We'll now get batches of 64 tokenized sentences.
 
@@ -81,7 +65,7 @@ let mut dataloader = dataflow::dataloader::Dataloader(pipeline);
 // Training loop
 for example in &mut dataloader {
    // Now example is a vector of tokenized strings!
-   // Do with them what you may...
+   // Do with them what you please...
 }
 ```
 
@@ -89,9 +73,8 @@ To Do:
 - [ ] Spin out all NLP related stuff into a dataflow-nlp crate.
 - [ ] Make dataloader use a multiqueue instead of draining all examples into buffer on main thread
 - [ ] Make auto-parallel pipeline Node using rayon
-- [ ] Clear up any discrepencies between batch and single functions (like in Stateful)
-- [ ] Add tokenizer as a node
 - [ ] Add async ability and remote sources.
+- [ ] Simplify the type magic used to make functions-as-closures work. Allow implementation of Node directly.
 
 ## Codebase Visualization
 ![Visualization of the codebase](./diagram.svg)
