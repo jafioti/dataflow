@@ -1,6 +1,6 @@
 [package]
 name = "dataflow"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["jafioti <jafioti@gmail.com>"]
 edition = "2021"
 description = "Dataflow is a data processing library, primarily for machine learning."
