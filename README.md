@@ -37,10 +37,9 @@ let pipeline = RandomLoader::new(vec!["file1.txt".to_string(), "file2.txt".to_st
 ```
 Great! Now our data gets efficiently tokenized in batches. Right now, we will get single tokenized sentences out of the pipeline one at a time. But what if we wanted to get batches out? Let's use a Batch node:
 ```rust
-use dataflow::pipeline::Stateful;
 
 // Our tokenizer
-let tokenizer = dataflow::tokenization::WordpieceTokenizer::load();
+let tokenizer = dataflow_nlp::tokenization::WordpieceTokenizer::load();
 
 // Our pipeline
 let pipeline = RandomLoader::new(vec!["file1.txt".to_string(), "file2.txt".to_string()])
