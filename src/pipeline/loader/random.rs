@@ -4,7 +4,7 @@ use std::{
     io::{BufRead, BufReader},
 };
 
-use crate::pipeline::Node;
+use crate::pipeline::*;
 
 /// Given files, randomly load segments seperated by a delimeter
 pub struct RandomLoader {
@@ -64,7 +64,12 @@ impl Node for RandomLoader {
 
     fn process(&mut self, input: Self::Input) -> Self::Output {
         // Load next input.len() examples in order, then shuffle them
-        let mut examples_to_load = self.load_order[self.currently_loaded_index..self.load_order.len().min(self.currently_loaded_index + input.len())].to_vec();
+        let mut examples_to_load = self.load_order[self.currently_loaded_index
+            ..self
+                .load_order
+                .len()
+                .min(self.currently_loaded_index + input.len())]
+            .to_vec();
         examples_to_load.sort_unstable();
 
         // Run through each example in each file
@@ -201,5 +206,19 @@ impl Node for RandomLoader {
 
     fn data_remaining(&self, _before: usize) -> usize {
         self.load_order.len() - self.currently_loaded_index
+    }
+}
+
+impl ExplicitNode<Vec<()>, Vec<String>> for RandomLoader {
+    fn process(&mut self, input: Vec<()>) -> Vec<String> {
+        <Self as Node>::process(self, input)
+    }
+
+    fn data_remaining(&self, before: usize) -> usize {
+        <Self as Node>::data_remaining(self, before)
+    }
+
+    fn reset(&mut self) {
+        <Self as Node>::reset(self);
     }
 }

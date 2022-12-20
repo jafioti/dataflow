@@ -1,4 +1,4 @@
-use crate::pipeline::{Node, ExplicitNode};
+use crate::pipeline::{ExplicitNode, Node};
 use std::{cmp::Ordering, marker::PhantomData};
 
 pub struct Sort<T, F: Fn(&T, &T) -> Ordering> {

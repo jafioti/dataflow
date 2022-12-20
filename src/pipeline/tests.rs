@@ -1,4 +1,4 @@
-use std::{fmt::Debug, num::ParseIntError, thread};
+use std::thread;
 
 use crate::pipeline::*;
 
@@ -6,11 +6,8 @@ use crate::pipeline::*;
 fn add_ten(nums: Vec<i32>) -> Vec<i32> {
     nums.into_iter().map(|n| n + 10).collect()
 }
-fn convert_to_string<I: ToString>(inp: I) -> String {
-    inp.to_string()
-}
-fn convert_to_int(inp: Vec<String>) -> Vec<Result<i32, ParseIntError>> {
-    inp.into_iter().map(|i| i.parse::<i32>()).collect()
+fn convert_to_int(inp: Vec<String>) -> Vec<i32> {
+    inp.into_iter().map(|i| i.parse::<i32>().unwrap()).collect()
 }
 fn greet(inp: Vec<String>) -> Vec<String> {
     inp.into_iter().map(|i| format!("Hello {}", i)).collect()
@@ -20,14 +17,11 @@ fn concat_strings(inp: Vec<(String, String)>) -> Vec<String> {
         .map(|(a, b)| format!("{}{}", a, b))
         .collect()
 }
-fn unwrap_result<S, F: Debug>(inp: Result<S, F>) -> S {
-    inp.unwrap()
-}
 
 #[test]
 fn test_single_pipeline() {
-    let mut pipeline = Stateless::new(add_ten)
-        .map(convert_to_string)
+    let mut pipeline = add_ten // Would be great if we could start a pipeline with just the function. Currently requires a cast to Into<NodeContainer> to use .node and .map
+        .map(|i: i32| i.to_string())
         .node(greet);
 
     let inputs = vec![12, 3443, 123, 98543];
@@ -44,16 +38,17 @@ fn test_single_pipeline() {
 
 #[test]
 fn test_pair_pipeline() {
-    let pipeline = Stateless::new(add_ten)
-        .map(convert_to_string)
+    let pipeline = add_ten
+        .map(|i: i32| i.to_string())
         .split(
-            Stateless::new(greet),
-            Stateless::new(convert_to_int)
-                .map(unwrap_result)
-                .node(add_ten as fn(Vec<i32>) -> Vec<i32>) // Testing the auto implementation of node on all fn pointers
-                .map(convert_to_string),
+            greet,
+            convert_to_int.node(add_ten).map(|i: i32| i.to_string()),
         )
-        .node(|(a, b): (Vec<String>, Vec<String>)| a.into_iter().zip(b.into_iter()).collect::<Vec<(String, String)>>())
+        .node(|(a, b): (Vec<String>, Vec<String>)| {
+            a.into_iter()
+                .zip(b.into_iter())
+                .collect::<Vec<(String, String)>>()
+        })
         .node(concat_strings)
         .node(greet);
     let inputs = vec![12, 3443, 123, 98543];

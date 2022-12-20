@@ -8,10 +8,10 @@ pub(crate) struct BasicVocab {
     pub num_tokens: usize,
     pub token2index: HashMap<String, usize>,
     pub index2token: Vec<String>,
-    pub PAD_token: usize,
-    pub SOS_token: usize,
-    pub EOS_token: usize,
-    pub SEP_token: usize,
+    pub pad_token: usize,
+    pub sos_token: usize,
+    pub eos_token: usize,
+    pub sep_token: usize,
 }
 
 impl BasicVocab {
@@ -21,10 +21,10 @@ impl BasicVocab {
             num_tokens: 0,
             token2index: HashMap::new(),
             index2token: Vec::new(),
-            PAD_token: 0,
-            SOS_token: 1,
-            EOS_token: 2,
-            SEP_token: 3,
+            pad_token: 0,
+            sos_token: 1,
+            eos_token: 2,
+            sep_token: 3,
         };
         voc.add_tokens(vec![
             "[PAD]".to_string(),

@@ -1,5 +1,5 @@
 // TOKENIZATION TESTS
-use crate::tokenization::*;
+use super::*;
 
 #[test]
 fn tokenize_alphabet() {

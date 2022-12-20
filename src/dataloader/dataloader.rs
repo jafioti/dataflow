@@ -9,8 +9,12 @@ pub struct Dataloader<T> {
     load_block_size: usize,
     buffer_size: usize,
     #[allow(clippy::type_complexity)]
-    loading_process:
-        Option<thread::JoinHandle<(Box<dyn Node<Input = Vec<()>, Output = Vec<T>> + Send>, Vec<T>)>>,
+    loading_process: Option<
+        thread::JoinHandle<(
+            Box<dyn Node<Input = Vec<()>, Output = Vec<T>> + Send>,
+            Vec<T>,
+        )>,
+    >,
     loading_process_flag: Option<thread_control::Flag>,
 }
 
@@ -83,9 +87,7 @@ impl<T: Send + 'static> Dataloader<T> {
     }
 
     pub fn iter_len(&mut self) -> LenIterDataloader<T> {
-        LenIterDataloader {
-            dataloader: self
-        }
+        LenIterDataloader { dataloader: self }
     }
 }
 
@@ -134,11 +136,10 @@ impl<T: Send + 'static> Iterator for Dataloader<T> {
 }
 
 pub struct LenIterDataloader<'a, T> {
-    dataloader: &'a mut Dataloader<T>
+    dataloader: &'a mut Dataloader<T>,
 }
 
-
-impl <'a, T: Send + 'static>Iterator for LenIterDataloader<'a, T> {
+impl<'a, T: Send + 'static> Iterator for LenIterDataloader<'a, T> {
     type Item = (T, usize);
 
     fn next(&mut self) -> Option<Self::Item> {

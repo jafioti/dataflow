@@ -1,5 +1,5 @@
 use super::Dataloader;
-use crate::pipeline::{Batch, Node, MapTrait};
+use crate::pipeline::*;
 use rand::{prelude::SliceRandom, thread_rng};
 
 /// A "loader" to load a full range of numbers randomly
@@ -22,6 +22,24 @@ impl Node for CreateRange {
     type Output = Vec<usize>;
 
     fn process(&mut self, input: Self::Input) -> Self::Output {
+        let data =
+            self.nums_to_make[self.current_progress..self.current_progress + input.len()].to_vec();
+        self.current_progress += input.len();
+        data
+    }
+
+    fn reset(&mut self) {
+        self.nums_to_make.shuffle(&mut thread_rng());
+        self.current_progress = 0;
+    }
+
+    fn data_remaining(&self, _before: usize) -> usize {
+        self.nums_to_make.len() - self.current_progress
+    }
+}
+
+impl ExplicitNode<Vec<()>, Vec<usize>> for CreateRange {
+    fn process(&mut self, input: Vec<()>) -> Vec<usize> {
         let data =
             self.nums_to_make[self.current_progress..self.current_progress + input.len()].to_vec();
         self.current_progress += input.len();

@@ -1,6 +1,6 @@
-use crate::pipeline::ExplicitNode;
-
 use super::Tokenizer;
+
+use dataflow::pipeline::ExplicitNode;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

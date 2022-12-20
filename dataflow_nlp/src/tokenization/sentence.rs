@@ -1,6 +1,6 @@
-use crate::pipeline::ExplicitNode;
-
 use super::Tokenizer;
+
+use dataflow::pipeline::ExplicitNode;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 

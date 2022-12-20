@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use itertools::Itertools;
 
-use crate::pipeline::{Node, ExplicitNode};
+use crate::pipeline::{ExplicitNode, Node};
 
 /// Create batches from examples
 pub struct Batch<T> {
@@ -42,15 +42,15 @@ pub struct ArrayBatch<const B: usize, T> {
     _phantom: PhantomData<T>,
 }
 
-impl <const B: usize, T> Default for ArrayBatch<B, T> {
+impl<const B: usize, T> Default for ArrayBatch<B, T> {
     fn default() -> Self {
         Self {
-            _phantom: Default::default()
+            _phantom: Default::default(),
         }
     }
 }
 
-impl <const B: usize, T>Node for ArrayBatch<B, T> {
+impl<const B: usize, T> Node for ArrayBatch<B, T> {
     type Input = Vec<T>;
     type Output = Vec<[T; B]>;
     fn process(&mut self, input: Self::Input) -> Self::Output {
@@ -68,7 +68,7 @@ impl <const B: usize, T>Node for ArrayBatch<B, T> {
     }
 }
 
-impl <const B: usize, T>ExplicitNode<Vec<T>, Vec<[T; B]>> for ArrayBatch<B, T> {
+impl<const B: usize, T> ExplicitNode<Vec<T>, Vec<[T; B]>> for ArrayBatch<B, T> {
     fn process(&mut self, input: Vec<T>) -> Vec<[T; B]> {
         let mut batches = Vec::with_capacity(input.len() / B);
         let chunks = input.into_iter().chunks(B);

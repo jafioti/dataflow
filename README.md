@@ -74,7 +74,7 @@ To Do:
 - [ ] Make dataloader use a multiqueue instead of draining all examples into buffer on main thread
 - [ ] Make auto-parallel pipeline Node using rayon
 - [ ] Add async ability and remote sources.
-- [ ] Simplify the type magic used to make functions-as-closures work. Allow implementation of Node directly.
+- [ ] Simplify the type magic used to make functions-as-closures work. Allow implementation of Node directly. Remove duplicate impls of Node and ExplicitNode
 
 ## Codebase Visualization
 ![Visualization of the codebase](./diagram.svg)

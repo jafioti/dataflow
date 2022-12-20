@@ -1,6 +1,6 @@
 use std::{collections::BTreeMap, marker::PhantomData};
 
-use crate::pipeline::{Node, ExplicitNode};
+use crate::pipeline::{ExplicitNode, Node};
 
 /// Implements the MapReduce operation as seen here: https://research.google/pubs/pub62/
 pub struct MapReduce<I, K, V, O, Map: Fn(I) -> Vec<(K, V)>, Reduce: Fn((K, Vec<V>)) -> Vec<O>> {
@@ -35,8 +35,8 @@ impl<I, K: Ord, V, O, Map: Fn(I) -> Vec<(K, V)>, Reduce: Fn((K, Vec<V>)) -> Vec<
     }
 }
 
-impl<I, K: Ord, V, O, Map: Fn(I) -> Vec<(K, V)>, Reduce: Fn((K, Vec<V>)) -> Vec<O>> ExplicitNode<Vec<I>, Vec<O>>
-    for MapReduce<I, K, V, O, Map, Reduce>
+impl<I, K: Ord, V, O, Map: Fn(I) -> Vec<(K, V)>, Reduce: Fn((K, Vec<V>)) -> Vec<O>>
+    ExplicitNode<Vec<I>, Vec<O>> for MapReduce<I, K, V, O, Map, Reduce>
 {
     fn process(&mut self, input: Vec<I>) -> Vec<O> {
         group(input.into_iter().flat_map(&self.map))

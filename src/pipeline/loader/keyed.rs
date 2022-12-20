@@ -5,7 +5,7 @@ use std::{
 
 use itertools::Itertools;
 
-use crate::pipeline::Node;
+use crate::pipeline::*;
 
 /// A loader with a key generating function
 pub struct KeyedLoader {
@@ -154,5 +154,19 @@ impl Node for KeyedLoader {
 
     fn data_remaining(&self, before: usize) -> usize {
         before
+    }
+}
+
+impl ExplicitNode<Vec<usize>, Vec<String>> for KeyedLoader {
+    fn process(&mut self, input: Vec<usize>) -> Vec<String> {
+        <Self as Node>::process(self, input)
+    }
+
+    fn data_remaining(&self, before: usize) -> usize {
+        <Self as Node>::data_remaining(self, before)
+    }
+
+    fn reset(&mut self) {
+        <Self as Node>::reset(self);
     }
 }
