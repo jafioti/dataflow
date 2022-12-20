@@ -1,7 +1,7 @@
 use rand::{prelude::SliceRandom, thread_rng};
 use std::{
     fs::File,
-    io::{BufRead, BufReader},
+    io::{BufRead, BufReader}, path::Path,
 };
 
 use crate::pipeline::*;
@@ -17,9 +17,9 @@ pub struct RandomLoader {
 }
 
 impl RandomLoader {
-    pub fn new(files: &[String]) -> Self {
+    pub fn new<T: ToString>(files: &[T]) -> Self {
         RandomLoader {
-            files: files.to_vec(),
+            files: files.iter().map(|s| s.to_string()).collect(),
             delimeter: "\n".to_string(),
             load_order: vec![],
             currently_loaded_index: 0,
@@ -29,7 +29,7 @@ impl RandomLoader {
     }
 
     /// Create a new RandomLoader with all files in a directory
-    pub fn from_directory(path: &str) -> Self {
+    pub fn from_directory<T: AsRef<Path>>(path: T) -> Self {
         let files = std::fs::read_dir(path)
             .unwrap()
             .into_iter()

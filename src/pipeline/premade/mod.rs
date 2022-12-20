@@ -8,3 +8,5 @@ mod mapreduce;
 pub use mapreduce::*;
 mod map;
 pub use map::*;
+mod shuffle;
+pub use shuffle::*;
