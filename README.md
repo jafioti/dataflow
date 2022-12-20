@@ -20,11 +20,11 @@ fn main() {
 The RandomLoader by default loads individual lines randomly from files. Next add a transformation to it with the `map()` function:
 ```rust
 let pipeline = RandomLoader::new(vec!["file1.txt".to_string(), "file2.txt".to_string()])
-      .map(|line| format!("Hello {}", line));
+      .map(|line| format!("Hello {}", line)); // Add hello to each line
 ```
 `map()` takes in a Node that processes a single sample at a time. If we want to do batch processing, we can use `.node()` which takes a Node that can process a batch at a time.
 
-Important node: **All functions and closures are also Nodes!** This means that whenever we want to add a node, we could simple use a function. In this case, the closure takes in a single datapoint and outputs a single datapoint. 
+Important node: **All functions and closures are also Nodes!** This means that whenever we want to add a stateless transformation, we could simple use a function. In this case, the closure takes in a single datapoint and outputs a single datapoint. 
 
 Now we've added "Hello " to every line, let's use a tokenizer from `dataflow_nlp` in our pipeline:
 ```rust
@@ -33,8 +33,8 @@ let tokenizer = dataflow_nlp::tokenization::WordpieceTokenizer::load();
 
 // Our pipeline
 let pipeline = RandomLoader::new(vec!["file1.txt".to_string(), "file2.txt".to_string()])
-      .map(|lines| format!("Hello {}", line))
-      .node(tokenizer); // This will tokenize the strings in batches
+      .map(|line| format!("Hello {}", line)) // Add hello to each line
+      .node(tokenizer); // Tokenize the lines
 
 ```
 Great! Now our data gets efficiently tokenized in batches. Right now, we will get single tokenized sentences out of the pipeline one at a time. But what if we wanted to get batches out? Let's use a Batch node:
@@ -45,17 +45,33 @@ let tokenizer = dataflow_nlp::tokenization::WordpieceTokenizer::load();
 
 // Our pipeline
 let pipeline = RandomLoader::new(vec!["file1.txt".to_string(), "file2.txt".to_string()])
-      .map(|lines| format!("Hello {}", line))
-      .node(tokenizer) // This will tokenize the strings in batches
-      .node(Batch::new(64)); // We'll use 64 as the batch size
+      .map(|line| format!("Hello {}", line)) // Add hello to each line
+      .node(tokenizer) // Tokenize the lines
+      .node(Batch::new(64)); // Create batches of 64
 ```
 That's it! We'll now get batches of 64 tokenized sentences.
 
 ### Loader Nodes
-So far it seems we've only used two types of Nodes, Stateless and Stateful (Stateless was generated when we used .add_fn(), and a Batch node is Stateless). Actually we used three, because RandomLoader is a Node as well! It takes as input Vec<()>, which is what the pipeline will start with, and produces data (Vec<String>) to send through the pipeline.
+As discussed before, everything in the pipeline implements the `Node` trait. RandomLoader is also a node! So the question arises, since data originates from it, and since Nodes need an *input* and an *output*, what does it take as an input? Simple, it takes as input Vec<()>, which is what the pipeline will start with, and produces data (Vec<String>) to send through the pipeline. This pattern is the same across all Nodes where data originates.
   
 ### Custom Nodes
-In fact, you can implement your own Nodes as well, by implementing the `Node` trait! Just implement `fn process(Input) -> Output` in the trait, and optionally `fn reset(&mut)` which gets called at the beginning of an epoch, and `fn data_remaining(&self) -> usize` which should return how much data remains availiable to the node (the number of lines we haven't loaded yet for RandomLoader, or pass through the remaining data for a non-loader Node) and you have your own Node to integrate into the pipeline!
+In fact, you can implement your own Nodes as well, by implementing the `Node` trait!
+```rust
+pub trait Node {
+    type Input;
+    type Output;
+
+    /// Process a batch of data
+    fn process(&mut self, input: Self::Input) -> Self::Output;
+    /// Reset signal propogates through pipeline
+    fn reset(&mut self) {}
+    /// Get number of examples left
+    fn data_remaining(&self, before: usize) -> usize {
+        before // Defaults to same as previous remaining data
+    }
+}
+```
+Your custom nodes can then be inserted directly into the pipeline!
   
 ### Dataloader
 Since we built this cool pipeline, what can we do with it? Well for starters, we could simply call process() and feed in some data:
