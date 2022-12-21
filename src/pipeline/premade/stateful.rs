@@ -1,6 +1,4 @@
-use crate::pipeline::ExplicitNode;
-
-use super::super::Node;
+use crate::pipeline::Node;
 use std::marker::PhantomData;
 
 pub struct Stateful<I, O, S, F: Fn(I, &mut S) -> O> {
@@ -25,12 +23,6 @@ impl<I, O, S, F: Fn(I, &mut S) -> O> Node for Stateful<I, O, S, F> {
     type Output = O;
 
     fn process(&mut self, input: Self::Input) -> Self::Output {
-        (self.function)(input, &mut self.state)
-    }
-}
-
-impl<I, O, S, F: Fn(I, &mut S) -> O> ExplicitNode<I, O> for Stateful<I, O, S, F> {
-    fn process(&mut self, input: I) -> O {
         (self.function)(input, &mut self.state)
     }
 }

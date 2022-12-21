@@ -156,17 +156,3 @@ impl Node for KeyedLoader {
         before
     }
 }
-
-impl ExplicitNode<Vec<usize>, Vec<String>> for KeyedLoader {
-    fn process(&mut self, input: Vec<usize>) -> Vec<String> {
-        <Self as Node>::process(self, input)
-    }
-
-    fn data_remaining(&self, before: usize) -> usize {
-        <Self as Node>::data_remaining(self, before)
-    }
-
-    fn reset(&mut self) {
-        <Self as Node>::reset(self);
-    }
-}

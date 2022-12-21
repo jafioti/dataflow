@@ -38,29 +38,11 @@ impl Node for CreateRange {
     }
 }
 
-impl ExplicitNode<Vec<()>, Vec<usize>> for CreateRange {
-    fn process(&mut self, input: Vec<()>) -> Vec<usize> {
-        let data =
-            self.nums_to_make[self.current_progress..self.current_progress + input.len()].to_vec();
-        self.current_progress += input.len();
-        data
-    }
-
-    fn reset(&mut self) {
-        self.nums_to_make.shuffle(&mut thread_rng());
-        self.current_progress = 0;
-    }
-
-    fn data_remaining(&self, _before: usize) -> usize {
-        self.nums_to_make.len() - self.current_progress
-    }
-}
-
 #[test]
 fn test_dataloader() {
     // Write a dataloader test
     let pipeline = CreateRange::new(10_000)
-        .map(|i| i * 10)
+        .map(|i: usize| i * 10)
         .node(Batch::new(10));
     let mut loader = Dataloader::new(pipeline);
     assert_eq!(loader.len(), 1000);

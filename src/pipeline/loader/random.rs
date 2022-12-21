@@ -208,17 +208,3 @@ impl Node for RandomLoader {
         self.load_order.len() - self.currently_loaded_index
     }
 }
-
-impl ExplicitNode<Vec<()>, Vec<String>> for RandomLoader {
-    fn process(&mut self, input: Vec<()>) -> Vec<String> {
-        <Self as Node>::process(self, input)
-    }
-
-    fn data_remaining(&self, before: usize) -> usize {
-        <Self as Node>::data_remaining(self, before)
-    }
-
-    fn reset(&mut self) {
-        <Self as Node>::reset(self);
-    }
-}

@@ -148,7 +148,7 @@ pub trait ExtendNodeMap<Input, Output, E: ExplicitNode<Input, Vec<Output>>> {
         node: T,
     ) -> Connector<
         NodeContainer<Input, Vec<Output>, E>,
-        NodeContainer<Vec<Output>, Vec<O>, Map<Output, O, NodeContainer<Output, O, N>>>,
+        NodeContainer<Vec<Output>, Vec<O>, NodeTraitContainer<Map<Output, O, NodeContainer<Output, O, N>>>>,
     >;
 }
 
@@ -164,7 +164,7 @@ impl<
         node: T,
     ) -> Connector<
         NodeContainer<Input, Vec<Output>, E>,
-        NodeContainer<Vec<Output>, Vec<O>, Map<Output, O, NodeContainer<Output, O, N>>>,
+        NodeContainer<Vec<Output>, Vec<O>, NodeTraitContainer<Map<Output, O, NodeContainer<Output, O, N>>>>,
     >
     where
         Self: std::marker::Sized,
@@ -234,5 +234,33 @@ impl<I, O, N: ExplicitNode<I, O>> Node for NodeContainer<I, O, N> {
 
     fn data_remaining(&self, before: usize) -> usize {
         self.node.data_remaining(before)
+    }
+}
+
+// Implementing Into<NodeContainer> for Node
+pub struct NodeTraitContainer<N: Node> {
+    pub node: N
+}
+
+impl <I, O, N: Node<Input=I, Output=O>> ExplicitNode<I, O> for NodeTraitContainer<N> {
+    fn process(&mut self, input: I) -> O {
+        self.node.process(input)
+    }
+
+    fn data_remaining(&self, before: usize) -> usize {
+        self.node.data_remaining(before)
+    }
+
+    fn reset(&mut self) {
+        self.node.reset()
+    }
+}
+
+impl <I, O, N: Node<Input=I, Output=O>> From<N> for NodeContainer<I, O, NodeTraitContainer<N>> {
+    fn from(node: N) -> Self {
+        NodeContainer {
+            node: NodeTraitContainer { node },
+            _phantom: Default::default(),
+        }
     }
 }

@@ -1,4 +1,4 @@
-use crate::pipeline::{ExplicitNode, Node};
+use crate::pipeline::Node;
 use std::{cmp::Ordering, marker::PhantomData};
 
 pub struct Sort<T, F: Fn(&T, &T) -> Ordering> {
@@ -20,13 +20,6 @@ impl<T, F: Fn(&T, &T) -> Ordering> Node for Sort<T, F> {
     type Output = Vec<T>;
 
     fn process(&mut self, mut input: Self::Input) -> Self::Output {
-        input.sort_by(&self.sort_fn);
-        input
-    }
-}
-
-impl<T, F: Fn(&T, &T) -> Ordering> ExplicitNode<Vec<T>, Vec<T>> for Sort<T, F> {
-    fn process(&mut self, mut input: Vec<T>) -> Vec<T> {
         input.sort_by(&self.sort_fn);
         input
     }
