@@ -32,7 +32,6 @@ impl RandomLoader {
     pub fn from_directory(path: &str) -> Self {
         let files = std::fs::read_dir(path)
             .unwrap()
-            .into_iter()
             .map(|r| r.unwrap().path().to_str().unwrap().to_string())
             .collect();
         RandomLoader {

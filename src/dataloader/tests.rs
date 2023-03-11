@@ -90,7 +90,6 @@ fn test_dataloader() {
     assert_eq!(
         data,
         (0..10_000)
-            .into_iter()
             .map(|i| i * 10)
             .collect::<Vec<usize>>()
     )
