@@ -60,23 +60,6 @@ impl<N1: Node, N2: Node<Input = N1::Output>> Node for Connector<N1, N2> {
     }
 }
 
-impl<N1: Node, N2: Node<Input = N1::Output>> ExplicitNode<N1::Input, N2::Output>
-    for Connector<N1, N2>
-{
-    fn process(&mut self, input: N1::Input) -> N2::Output {
-        self.node2.process(self.node1.process(input))
-    }
-
-    fn data_remaining(&self, before: usize) -> usize {
-        self.node2.data_remaining(self.node1.data_remaining(before))
-    }
-
-    fn reset(&mut self) {
-        self.node1.reset();
-        self.node2.reset();
-    }
-}
-
 /// Pair contains two nodes that run in parallel (TODO: actually make parallel)
 pub struct Pair<N1: Node, N2: Node> {
     pub node1: N1,
@@ -102,26 +85,6 @@ impl<N1: Node, N2: Node> Node for Pair<N1, N2> {
     type Output = (N1::Output, N2::Output);
 
     fn process(&mut self, (a, b): Self::Input) -> Self::Output {
-        (self.node1.process(a), self.node2.process(b))
-    }
-
-    fn reset(&mut self) {
-        self.node1.reset();
-        self.node2.reset();
-    }
-
-    fn data_remaining(&self, before: usize) -> usize {
-        usize::min(
-            self.node1.data_remaining(before),
-            self.node2.data_remaining(before),
-        )
-    }
-}
-
-impl<N1: Node, N2: Node> ExplicitNode<(N1::Input, N2::Input), (N1::Output, N2::Output)>
-    for Pair<N1, N2>
-{
-    fn process(&mut self, (a, b): (N1::Input, N2::Input)) -> (N1::Output, N2::Output) {
         (self.node1.process(a), self.node2.process(b))
     }
 

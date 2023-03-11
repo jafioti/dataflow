@@ -44,17 +44,3 @@ impl Node for FileLoader {
         self.load_order.len() - self.currently_loaded_index
     }
 }
-
-impl ExplicitNode<Vec<()>, Vec<Vec<u8>>> for FileLoader {
-    fn process(&mut self, input: Vec<()>) -> Vec<Vec<u8>> {
-        <Self as Node>::process(self, input)
-    }
-
-    fn data_remaining(&self, before: usize) -> usize {
-        <Self as Node>::data_remaining(self, before)
-    }
-
-    fn reset(&mut self) {
-        <Self as Node>::reset(self);
-    }
-}

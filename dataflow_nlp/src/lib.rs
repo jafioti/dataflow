@@ -4,3 +4,6 @@ pub mod batching;
 pub mod tokenization;
 /// Vocab module contains the mako vocab object and the functions to load different vocabularies
 pub mod vocab;
+
+#[cfg(test)]
+mod tests;

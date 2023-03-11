@@ -18,8 +18,11 @@ impl<I, O, E: ExplicitNode<I, O>> Map<I, O, NodeContainer<I, O, E>> {
     }
 }
 
-impl<I, O, N: Node<Input = I, Output = O>> ExplicitNode<Vec<I>, Vec<O>> for Map<I, O, N> {
-    fn process(&mut self, input: Vec<I>) -> Vec<O> {
+impl <I, O, N: Node<Input = I, Output = O>>Node for Map<I, O, N> {
+    type Input = Vec<I>;
+    type Output = Vec<O>;
+
+    fn process(&mut self, input: Self::Input) -> Self::Output {
         input.into_iter().map(|i| self.node.process(i)).collect()
     }
 }
