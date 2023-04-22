@@ -20,9 +20,7 @@ fn concat_strings(inp: Vec<(String, String)>) -> Vec<String> {
 
 #[test]
 fn test_single_pipeline() {
-    let mut pipeline = add_ten // Would be great if we could start a pipeline with just the function. Currently requires a cast to Into<NodeContainer> to use .node and .map
-        .map(|i: i32| i.to_string())
-        .node(greet);
+    let mut pipeline = add_ten.map(|i: i32| i.to_string()).chain(greet);
 
     let inputs = vec![12, 3443, 123, 98543];
     assert_eq!(
@@ -42,15 +40,15 @@ fn test_pair_pipeline() {
         .map(|i: i32| i.to_string())
         .split(
             greet,
-            convert_to_int.node(add_ten).map(|i: i32| i.to_string()),
+            convert_to_int.chain(add_ten).map(|i: i32| i.to_string()),
         )
-        .node(|(a, b): (Vec<String>, Vec<String>)| {
+        .chain(|(a, b): (Vec<String>, Vec<String>)| {
             a.into_iter()
                 .zip(b.into_iter())
                 .collect::<Vec<(String, String)>>()
         })
-        .node(concat_strings)
-        .node(greet);
+        .chain(concat_strings)
+        .chain(greet);
     let inputs = vec![12, 3443, 123, 98543];
     let mut holder = PipelineHolder {
         pipeline: Some(pipeline),
@@ -82,11 +80,10 @@ fn test_map_reduce_pipeline() {
             vec![(num % 2 == 0, num)]
         },
         |(is_even, nums)| {
-            if is_even {
-                vec![format!("Even: {:?}", nums)]
-            } else {
-                vec![format!("Odd: {:?}", nums)]
-            }
+            vec![format!(
+                "{}: {nums:?}",
+                if is_even { "Even" } else { "Odd" }
+            )]
         },
     );
 

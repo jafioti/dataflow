@@ -21,11 +21,11 @@ impl<I, O, F: Fn(I) -> O> Node<I> for F {
 }
 
 pub trait ExtendNode<Input, Output, E: Node<Input, Output = Output>> {
-    fn node<O, N: Node<Output, Output = O>>(self, node: N) -> (E, N);
+    fn chain<O, N: Node<Output, Output = O>>(self, node: N) -> (E, N);
 }
 
 impl<Input, Output, E: Node<Input, Output = Output>> ExtendNode<Input, Output, E> for E {
-    fn node<O, N: Node<Output, Output = O>>(self, node: N) -> (E, N)
+    fn chain<O, N: Node<Output, Output = O>>(self, node: N) -> (E, N)
     where
         Self: std::marker::Sized,
     {
