@@ -1,4 +1,4 @@
-use super::{Duplicator, Map, Pair};
+use super::{Duplicator, Pair};
 
 pub trait Node<Input> {
     type Output;
@@ -73,19 +73,5 @@ impl<Input, Out1, Out2, E: Node<Input, Output = (Out1, Out2)>> ExtendNodePair<In
         node2: N2,
     ) -> (E, Pair<Out1, Out2, N1, N2>) {
         (self, Pair::new(node1, node2))
-    }
-}
-
-pub trait ExtendNodeMap<Input, Output, E: Node<Input, Output = Vec<Output>>> {
-    #[allow(clippy::type_complexity)]
-    fn map<O, N: Node<Output, Output = O>>(self, node: N) -> (E, Map<Output, N>);
-}
-
-impl<Input, Output, E: Node<Input, Output = Vec<Output>>> ExtendNodeMap<Input, Output, E> for E {
-    fn map<O, N: Node<Output, Output = O>>(self, node: N) -> (E, Map<Output, N>)
-    where
-        Self: std::marker::Sized,
-    {
-        (self, Map::new(node))
     }
 }
