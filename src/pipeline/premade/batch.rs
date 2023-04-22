@@ -19,11 +19,10 @@ impl<T> Batch<T> {
     }
 }
 
-impl<T> Node for Batch<T> {
-    type Input = Vec<T>;
+impl<T> Node<Vec<T>> for Batch<T> {
     type Output = Vec<Vec<T>>;
 
-    fn process(&mut self, mut input: Self::Input) -> Self::Output {
+    fn process(&mut self, mut input: Vec<T>) -> Self::Output {
         let mut batches = Vec::with_capacity(input.len() / self.batch_size);
         while !input.is_empty() {
             batches.push(
@@ -53,10 +52,9 @@ impl<const B: usize, T> Default for ArrayBatch<B, T> {
     }
 }
 
-impl<const B: usize, T> Node for ArrayBatch<B, T> {
-    type Input = Vec<T>;
+impl<const B: usize, T> Node<Vec<T>> for ArrayBatch<B, T> {
     type Output = Vec<[T; B]>;
-    fn process(&mut self, input: Self::Input) -> Self::Output {
+    fn process(&mut self, input: Vec<T>) -> Self::Output {
         let mut batches = Vec::with_capacity(input.len() / B);
         let chunks = input.into_iter().chunks(B);
         let mut chunks_iter = chunks.into_iter();

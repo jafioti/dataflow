@@ -13,25 +13,30 @@ pub struct FileLoader {
 impl FileLoader {
     pub fn new(files: Vec<String>) -> Self {
         FileLoader {
+            load_order: {
+                let mut order: Vec<_> = (0..files.len()).collect();
+                order.shuffle(&mut rand::thread_rng());
+                order
+            },
             files,
-            load_order: vec![],
             currently_loaded_index: 0,
         }
     }
 }
 
-impl Node for FileLoader {
-    type Input = Vec<()>;
-    type Output = Vec<Vec<u8>>;
+impl Node<Vec<()>> for FileLoader {
+    type Output = Vec<(String, Vec<u8>)>;
 
-    fn process(&mut self, input: Self::Input) -> Self::Output {
+    fn process(&mut self, input: Vec<()>) -> Self::Output {
         let mut read_data = vec![];
         for index in self.load_order[self.currently_loaded_index..input.len()].iter() {
             let mut data = Vec::new();
             let mut f = File::open(&self.files[*index]).expect("FileLoader failed to load file!");
             f.read_to_end(&mut data).expect("Failed to read file!");
-            read_data.push(data);
+            read_data.push((self.files[*index].to_string(), data));
         }
+        self.currently_loaded_index =
+            (self.currently_loaded_index + input.len()).min(self.load_order.len());
         read_data
     }
 

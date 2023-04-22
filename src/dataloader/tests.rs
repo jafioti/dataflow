@@ -17,11 +17,10 @@ impl CreateRange {
     }
 }
 
-impl Node for CreateRange {
-    type Input = Vec<()>;
+impl Node<Vec<()>> for CreateRange {
     type Output = Vec<usize>;
 
-    fn process(&mut self, input: Self::Input) -> Self::Output {
+    fn process(&mut self, input: Vec<()>) -> Self::Output {
         let data =
             self.nums_to_make[self.current_progress..self.current_progress + input.len()].to_vec();
         self.current_progress += input.len();
@@ -69,10 +68,5 @@ fn test_dataloader() {
     data.sort_unstable();
 
     // Compare data
-    assert_eq!(
-        data,
-        (0..10_000)
-            .map(|i| i * 10)
-            .collect::<Vec<usize>>()
-    )
+    assert_eq!(data, (0..10_000).map(|i| i * 10).collect::<Vec<usize>>())
 }

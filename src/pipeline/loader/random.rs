@@ -1,7 +1,8 @@
 use rand::{prelude::SliceRandom, thread_rng};
 use std::{
     fs::File,
-    io::{BufRead, BufReader}, path::Path,
+    io::{BufRead, BufReader},
+    path::Path,
 };
 
 use crate::pipeline::*;
@@ -57,11 +58,10 @@ impl RandomLoader {
     }
 }
 
-impl Node for RandomLoader {
-    type Input = Vec<()>;
+impl Node<Vec<()>> for RandomLoader {
     type Output = Vec<String>;
 
-    fn process(&mut self, input: Self::Input) -> Self::Output {
+    fn process(&mut self, input: Vec<()>) -> Self::Output {
         // Load next input.len() examples in order, then shuffle them
         let mut examples_to_load = self.load_order[self.currently_loaded_index
             ..self

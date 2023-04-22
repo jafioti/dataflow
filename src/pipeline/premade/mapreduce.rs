@@ -21,13 +21,12 @@ impl<I, K: Ord, V, O, Map: Fn(I) -> Vec<(K, V)>, Reduce: Fn((K, Vec<V>)) -> Vec<
     }
 }
 
-impl<I, K: Ord, V, O, Map: Fn(I) -> Vec<(K, V)>, Reduce: Fn((K, Vec<V>)) -> Vec<O>> Node
+impl<I, K: Ord, V, O, Map: Fn(I) -> Vec<(K, V)>, Reduce: Fn((K, Vec<V>)) -> Vec<O>> Node<Vec<I>>
     for MapReduce<I, K, V, O, Map, Reduce>
 {
-    type Input = Vec<I>;
     type Output = Vec<O>;
 
-    fn process(&mut self, input: Self::Input) -> Self::Output {
+    fn process(&mut self, input: Vec<I>) -> Self::Output {
         group(input.into_iter().flat_map(&self.map))
             .into_iter()
             .flat_map(&self.reduce)

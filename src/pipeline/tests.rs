@@ -1,4 +1,4 @@
-use std::thread;
+use std::{marker::PhantomData, thread};
 
 use crate::pipeline::*;
 
@@ -54,6 +54,7 @@ fn test_pair_pipeline() {
     let inputs = vec![12, 3443, 123, 98543];
     let mut holder = PipelineHolder {
         pipeline: Some(pipeline),
+        _phantom: Default::default(),
     };
     let outputs = run_pipeline(&mut holder, inputs);
 
@@ -96,17 +97,18 @@ fn test_map_reduce_pipeline() {
     )
 }
 
-struct PipelineHolder<N: Node> {
+struct PipelineHolder<I, N: Node<I>> {
     pub pipeline: Option<N>,
+    _phantom: PhantomData<I>,
 }
 
-fn run_pipeline<N: Node + Send + 'static>(
-    pipeline_holder: &mut PipelineHolder<N>,
-    input: N::Input,
+fn run_pipeline<I, N: Node<I> + Send + 'static>(
+    pipeline_holder: &mut PipelineHolder<I, N>,
+    input: I,
 ) -> N::Output
 where
-    N::Input: Send,
-    N::Output: Send,
+    I: Send + 'static,
+    N::Output: Send + 'static,
 {
     let mut pipeline = std::mem::replace(&mut pipeline_holder.pipeline, None).unwrap();
     let handle = thread::spawn(move || (pipeline.process(input), pipeline));

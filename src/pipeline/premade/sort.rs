@@ -15,11 +15,10 @@ impl<T, F: Fn(&T, &T) -> Ordering> Sort<T, F> {
     }
 }
 
-impl<T, F: Fn(&T, &T) -> Ordering> Node for Sort<T, F> {
-    type Input = Vec<T>;
+impl<T, F: Fn(&T, &T) -> Ordering> Node<Vec<T>> for Sort<T, F> {
     type Output = Vec<T>;
 
-    fn process(&mut self, mut input: Self::Input) -> Self::Output {
+    fn process(&mut self, mut input: Vec<T>) -> Self::Output {
         input.sort_by(&self.sort_fn);
         input
     }

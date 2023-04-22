@@ -43,11 +43,10 @@ impl KeyedLoader {
     }
 }
 
-impl Node for KeyedLoader {
-    type Input = Vec<usize>;
+impl Node<Vec<usize>> for KeyedLoader {
     type Output = Vec<String>;
 
-    fn process(&mut self, input: Self::Input) -> Self::Output {
+    fn process(&mut self, input: Vec<usize>) -> Self::Output {
         // Get bounds to load from
         let (min, max) = input.iter().minmax().into_option().unwrap().to_owned();
         let (mut min, mut max) = (*min, *max);
