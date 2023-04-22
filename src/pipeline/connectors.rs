@@ -2,23 +2,6 @@ use std::marker::PhantomData;
 
 use super::Node;
 
-impl<I, T, O, A: Node<I, Output = T>, B: Node<T, Output = O>> Node<I> for (A, B) {
-    type Output = O;
-
-    fn process(&mut self, input: I) -> Self::Output {
-        self.1.process(self.0.process(input))
-    }
-
-    fn data_remaining(&self, before: usize) -> usize {
-        self.1.data_remaining(self.0.data_remaining(before))
-    }
-
-    fn reset(&mut self) {
-        self.0.reset();
-        self.1.reset();
-    }
-}
-
 /// A node that takes in T and outputs (T, T)
 pub struct Duplicator<T: Clone> {
     _phantom: PhantomData<T>,
@@ -75,3 +58,36 @@ impl<I1, I2, N1: Node<I1>, N2: Node<I2>> Node<(I1, I2)> for Pair<I1, I2, N1, N2>
         )
     }
 }
+
+macro_rules! tuple_impls {
+    ([$($name:ident),+] [$($idx:tt),+], $last:ident, [$($rev_tail:ident),+]) => {
+        impl<
+            Input,
+            $last:
+            $(Node::<$rev_tail ::Output>, $rev_tail: )+
+            Node<Input>
+        > Node<Input> for ($($name,)+) {
+            type Output = $last ::Output;
+
+            fn process(&mut self, x: Input) -> Self::Output {
+                $(let x = self.$idx.process(x);)+
+                x
+            }
+
+            fn reset(&mut self) {
+                $(self.$idx.reset();)+
+            }
+
+            fn data_remaining(&self, mut before: usize) -> usize {
+                $( before = self.$idx.data_remaining(before); )+
+                before
+            }
+        }
+    };
+}
+
+tuple_impls!([M1, M2] [0, 1], M2, [M1]);
+tuple_impls!([M1, M2, M3] [0, 1, 2], M3, [M2, M1]);
+tuple_impls!([M1, M2, M3, M4] [0, 1, 2, 3], M4, [M3, M2, M1]);
+tuple_impls!([M1, M2, M3, M4, M5] [0, 1, 2, 3, 4], M5, [M4, M3, M2, M1]);
+tuple_impls!([M1, M2, M3, M4, M5, M6] [0, 1, 2, 3, 4, 5], M6, [M5, M4, M3, M2, M1]);

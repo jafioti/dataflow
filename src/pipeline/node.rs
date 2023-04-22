@@ -39,7 +39,7 @@ pub trait ExtendNodeSplit<Input, Output: Clone, E: Node<Input, Output = Output>>
         self,
         node1: E1,
         node2: E2,
-    ) -> ((E, Duplicator<Output>), Pair<Output, Output, E1, E2>);
+    ) -> (E, Duplicator<Output>, Pair<Output, Output, E1, E2>);
 }
 
 impl<Input, Output: Clone, E: Node<Input, Output = Output>> ExtendNodeSplit<Input, Output, E>
@@ -50,8 +50,8 @@ impl<Input, Output: Clone, E: Node<Input, Output = Output>> ExtendNodeSplit<Inpu
         self,
         node1: E1,
         node2: E2,
-    ) -> ((E, Duplicator<Output>), Pair<Output, Output, E1, E2>) {
-        ((self, Duplicator::default()), Pair::new(node1, node2))
+    ) -> (E, Duplicator<Output>, Pair<Output, Output, E1, E2>) {
+        (self, Duplicator::default(), Pair::new(node1, node2))
     }
 }
 
@@ -78,11 +78,11 @@ impl<Input, Out1, Out2, E: Node<Input, Output = (Out1, Out2)>> ExtendNodePair<In
 
 pub trait ExtendNodeMap<Input, Output, E: Node<Input, Output = Vec<Output>>> {
     #[allow(clippy::type_complexity)]
-    fn map<O, N: Node<Output, Output = O>>(self, node: N) -> (E, Map<Output, O, N>);
+    fn map<O, N: Node<Output, Output = O>>(self, node: N) -> (E, Map<Output, N>);
 }
 
 impl<Input, Output, E: Node<Input, Output = Vec<Output>>> ExtendNodeMap<Input, Output, E> for E {
-    fn map<O, N: Node<Output, Output = O>>(self, node: N) -> (E, Map<Output, O, N>)
+    fn map<O, N: Node<Output, Output = O>>(self, node: N) -> (E, Map<Output, N>)
     where
         Self: std::marker::Sized,
     {

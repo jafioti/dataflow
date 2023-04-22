@@ -4,12 +4,12 @@ use std::marker::PhantomData;
 
 use crate::pipeline::Node;
 
-pub struct Map<I, O, N: Node<I, Output = O>> {
-    _phantom: PhantomData<(I, O)>,
+pub struct Map<I, N: Node<I>> {
+    _phantom: PhantomData<I>,
     node: N,
 }
 
-impl<I, O, E: Node<I, Output = O>> Map<I, O, E> {
+impl<I, O, E: Node<I, Output = O>> Map<I, E> {
     pub fn new(node: E) -> Self {
         Map {
             _phantom: PhantomData::default(),
@@ -18,7 +18,7 @@ impl<I, O, E: Node<I, Output = O>> Map<I, O, E> {
     }
 }
 
-impl<I, O, N: Node<I, Output = O>> Node<Vec<I>> for Map<I, O, N> {
+impl<I, O, N: Node<I, Output = O>> Node<Vec<I>> for Map<I, N> {
     type Output = Vec<O>;
 
     fn process(&mut self, input: Vec<I>) -> Self::Output {
