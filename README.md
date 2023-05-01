@@ -22,7 +22,7 @@ The RandomLoader by default loads individual lines randomly from files. Next add
 let pipeline = RandomLoader::new(vec!["file1.txt".to_string(), "file2.txt".to_string()])
       .map(|line| format!("Hello {}", line)); // Add hello to each line
 ```
-`map()` takes in a Node that processes a single sample at a time. If we want to do batch processing, we can use `.node()` which takes a Node that can process a batch at a time.
+`map()` takes in a Node that processes a single sample at a time. If we want to do batch processing, we can use `.chain()` which takes a Node that can process a batch at a time.
 
 Important node: **All functions and closures are also Nodes!** This means that whenever we want to add a stateless transformation, we could simple use a function. In this case, the closure takes in a single datapoint and outputs a single datapoint. 
 
@@ -34,7 +34,7 @@ let tokenizer = dataflow_nlp::tokenization::WordpieceTokenizer::load();
 // Our pipeline
 let pipeline = RandomLoader::new(vec!["file1.txt".to_string(), "file2.txt".to_string()])
       .map(|line| format!("Hello {}", line)) // Add hello to each line
-      .node(tokenizer); // Tokenize the lines
+      .chain(tokenizer); // Tokenize the lines
 
 ```
 Great! Now our data gets efficiently tokenized in batches. Right now, we will get single tokenized sentences out of the pipeline one at a time. But what if we wanted to get batches out? Let's use a Batch node:
@@ -46,8 +46,8 @@ let tokenizer = dataflow_nlp::tokenization::WordpieceTokenizer::load();
 // Our pipeline
 let pipeline = RandomLoader::new(vec!["file1.txt".to_string(), "file2.txt".to_string()])
       .map(|line| format!("Hello {}", line)) // Add hello to each line
-      .node(tokenizer) // Tokenize the lines
-      .node(Batch::new(64)); // Create batches of 64
+      .chain(tokenizer) // Tokenize the lines
+      .chain(Batch::new(64)); // Create batches of 64
 ```
 That's it! We'll now get batches of 64 tokenized sentences.
 
