@@ -83,33 +83,38 @@ impl<T: Send + 'static> Iterator for Dataloader<T> {
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
-        // Check if the loading thread is finished
-        if let Some(process) = &self.loading_process {
-            if process.is_finished() {
-                // Unload thread
-                let process = std::mem::replace(&mut self.loading_process, None).unwrap();
+        loop {
+            // Check if the loading thread is finished
+            if let Some(process) = &self.loading_process {
+                if process.is_finished() || self.buffer.is_empty() {
+                    // Unload thread
+                    let process = std::mem::replace(&mut self.loading_process, None).unwrap();
+                    let (pipeline, data) = process.join().unwrap();
+                    self.pipeline = Some(pipeline);
+                    self.buffer.extend(data);
+                }
+            }
+            // Launch thread if not currently running and buffer running low
+            if self.buffer.len() < self.buffer_size && self.pipeline.is_some() {
+                if self.pipeline.as_ref().unwrap().data_remaining(0) == 0 && self.buffer.is_empty()
+                {
+                    self.pipeline.as_mut().unwrap().reset();
+                    return None;
+                }
+                self.load_block();
+            }
+
+            // Get data from buffer
+            if let Some(d) = self.buffer.pop_front() {
+                return Some(d);
+            } else if let Some(process) = self.loading_process.take() {
                 let (pipeline, data) = process.join().unwrap();
                 self.pipeline = Some(pipeline);
                 self.buffer.extend(data);
+                if let Some(d) = self.buffer.pop_front() {
+                    return Some(d);
+                }
             }
-        } else if self.buffer.len() < self.buffer_size && self.pipeline.is_some() {
-            if self.pipeline.as_ref().unwrap().data_remaining(0) == 0 && self.buffer.is_empty() {
-                self.pipeline.as_mut().unwrap().reset();
-                return None;
-            }
-            self.load_block();
-        }
-        // Get data from buffer
-        if let Some(d) = self.buffer.pop_front() {
-            Some(d)
-        } else if let Some(process) = self.loading_process.take() {
-            let (pipeline, data) = process.join().unwrap();
-            self.pipeline = Some(pipeline);
-            self.buffer.extend(data);
-            self.buffer.pop_front()
-        } else {
-            self.pipeline.as_mut().unwrap().reset();
-            None
         }
     }
 }

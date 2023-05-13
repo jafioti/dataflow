@@ -1,8 +1,10 @@
-/// Batching module contains several utilities for dealing with batches, such as shuffling and sorting batches
+/// Uilities for dealing with batches, such as shuffling and sorting batches
 pub mod batching;
-/// Tokenization module handles all tokenization and untokenization
+/// Dataflow pipeline nodes
+pub mod pipelines;
+/// All tokenization and untokenization
 pub mod tokenization;
-/// Vocab module contains the mako vocab object and the functions to load different vocabularies
+/// Vocab object and the functions to load different vocabularies
 pub mod vocab;
 
 #[cfg(test)]

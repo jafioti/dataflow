@@ -13,5 +13,5 @@ rand = "0.8"
 thread-control = "0.1"
 itertools = "0.9"
 
-#rayon = "1.5"
+#rayon = "1.7"
 #multiqueue = "0.3"

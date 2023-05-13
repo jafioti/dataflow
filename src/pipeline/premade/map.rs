@@ -32,7 +32,7 @@ pub trait ExtendNodeMap<Input, Output, E: Node<Input, Output = Vec<Output>>> {
         self,
         node: N,
     ) -> (E, FilterMap<Output, N>);
-    fn filter<F: Fn(&Output) -> bool>(self, function: F) -> (E, Filter<Output, F>);
+    fn filter<F: FnMut(&Output) -> bool>(self, function: F) -> (E, Filter<Output, F>);
 }
 
 impl<Input, Output, E: Node<Input, Output = Vec<Output>>> ExtendNodeMap<Input, Output, E> for E {
@@ -53,7 +53,7 @@ impl<Input, Output, E: Node<Input, Output = Vec<Output>>> ExtendNodeMap<Input, O
         (self, FilterMap::new(node))
     }
 
-    fn filter<F: Fn(&Output) -> bool>(self, function: F) -> (E, Filter<Output, F>) {
+    fn filter<F: FnMut(&Output) -> bool>(self, function: F) -> (E, Filter<Output, F>) {
         (self, Filter::new(function))
     }
 }
@@ -83,12 +83,12 @@ impl<I, O, N: Node<I, Output = Option<O>>> Node<Vec<I>> for FilterMap<I, N> {
     }
 }
 
-pub struct Filter<I, F: Fn(&I) -> bool> {
+pub struct Filter<I, F: FnMut(&I) -> bool> {
     _phantom: PhantomData<I>,
     function: F,
 }
 
-impl<I, F: Fn(&I) -> bool> Filter<I, F> {
+impl<I, F: FnMut(&I) -> bool> Filter<I, F> {
     pub fn new(function: F) -> Self {
         Filter {
             _phantom: PhantomData::default(),
@@ -97,10 +97,10 @@ impl<I, F: Fn(&I) -> bool> Filter<I, F> {
     }
 }
 
-impl<I, F: Fn(&I) -> bool> Node<Vec<I>> for Filter<I, F> {
+impl<I, F: FnMut(&I) -> bool> Node<Vec<I>> for Filter<I, F> {
     type Output = Vec<I>;
 
     fn process(&mut self, input: Vec<I>) -> Self::Output {
-        input.into_iter().filter(&self.function).collect()
+        input.into_iter().filter(|i| (self.function)(i)).collect()
     }
 }

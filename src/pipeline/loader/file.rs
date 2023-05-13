@@ -1,51 +1,67 @@
-use std::{fs::File, io::Read};
+use std::{
+    fs::File,
+    io::Read,
+    path::{Path, PathBuf},
+};
 
+use itertools::Itertools;
 use rand::{prelude::SliceRandom, thread_rng};
 
 use crate::pipeline::*;
 
 pub struct FileLoader {
-    files: Vec<String>,
-    load_order: Vec<usize>, // A full vector of indexes for every example, shuffled on reset
+    files: Vec<PathBuf>,
     currently_loaded_index: usize, // The last example we loaded as an index of the load_order vector (starts at 0)
 }
 
 impl FileLoader {
-    pub fn new(files: Vec<String>) -> Self {
+    pub fn new(mut files: Vec<PathBuf>) -> Self {
         FileLoader {
-            load_order: {
-                let mut order: Vec<_> = (0..files.len()).collect();
-                order.shuffle(&mut rand::thread_rng());
-                order
+            files: {
+                files.shuffle(&mut thread_rng());
+                files
             },
-            files,
+            currently_loaded_index: 0,
+        }
+    }
+
+    pub fn from_directory<P: AsRef<Path>>(path: P) -> Self {
+        FileLoader {
+            files: std::fs::read_dir(path)
+                .unwrap()
+                .flatten()
+                .map(|f| f.path())
+                .collect_vec(),
             currently_loaded_index: 0,
         }
     }
 }
 
 impl Node<Vec<()>> for FileLoader {
-    type Output = Vec<(String, Vec<u8>)>;
+    type Output = Vec<(PathBuf, Vec<u8>)>;
 
     fn process(&mut self, input: Vec<()>) -> Self::Output {
         let mut read_data = vec![];
-        for index in self.load_order[self.currently_loaded_index..input.len()].iter() {
+        for file in self.files[self.currently_loaded_index
+            ..(self.currently_loaded_index + input.len()).min(self.files.len() - 1)]
+            .iter()
+        {
             let mut data = Vec::new();
-            let mut f = File::open(&self.files[*index]).expect("FileLoader failed to load file!");
+            let mut f = File::open(file).expect("FileLoader failed to load file!");
             f.read_to_end(&mut data).expect("Failed to read file!");
-            read_data.push((self.files[*index].to_string(), data));
+            read_data.push((file.clone(), data));
         }
         self.currently_loaded_index =
-            (self.currently_loaded_index + input.len()).min(self.load_order.len());
+            (self.currently_loaded_index + input.len()).min(self.files.len());
         read_data
     }
 
     fn reset(&mut self) {
-        self.load_order.shuffle(&mut thread_rng());
+        self.files.shuffle(&mut thread_rng());
         self.currently_loaded_index = 0;
     }
 
     fn data_remaining(&self, _before: usize) -> usize {
-        self.load_order.len() - self.currently_loaded_index
+        self.files.len() - self.currently_loaded_index
     }
 }

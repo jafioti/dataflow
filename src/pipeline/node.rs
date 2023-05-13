@@ -13,7 +13,7 @@ pub trait Node<Input> {
     } // Defaults to same as previous remaining data
 }
 
-impl<I, O, F: Fn(I) -> O> Node<I> for F {
+impl<I, O, F: FnMut(I) -> O> Node<I> for F {
     type Output = O;
     fn process(&mut self, input: I) -> Self::Output {
         (self)(input)

@@ -10,3 +10,5 @@ mod map;
 pub use map::*;
 mod shuffle;
 pub use shuffle::*;
+mod selector;
+pub use selector::*;
