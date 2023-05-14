@@ -58,4 +58,14 @@ impl<I, O> Node<Vec<I>> for BalancedSelector<I, O> {
             })
             .collect()
     }
+
+    fn data_remaining(&self, before: usize) -> usize {
+        self.nodes.iter().map(|n| n.data_remaining(before)).sum()
+    }
+
+    fn reset(&mut self) {
+        for node in &mut self.nodes {
+            node.reset();
+        }
+    }
 }
