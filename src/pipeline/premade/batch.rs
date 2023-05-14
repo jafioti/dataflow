@@ -5,6 +5,7 @@ use itertools::Itertools;
 use crate::pipeline::Node;
 
 /// Create batches from examples
+#[derive(Clone, Copy)]
 pub struct Batch<T> {
     _phantom: PhantomData<T>,
     batch_size: usize,

@@ -9,6 +9,18 @@ pub struct MapReduce<I, K, V, O, Map: Fn(I) -> Vec<(K, V)>, Reduce: Fn((K, Vec<V
     _phantom: PhantomData<(I, K, V, O)>,
 }
 
+impl<I, K, V, O, Map: Fn(I) -> Vec<(K, V)> + Clone, Reduce: Fn((K, Vec<V>)) -> Vec<O> + Clone> Clone
+    for MapReduce<I, K, V, O, Map, Reduce>
+{
+    fn clone(&self) -> Self {
+        Self {
+            map: self.map.clone(),
+            reduce: self.reduce.clone(),
+            _phantom: self._phantom,
+        }
+    }
+}
+
 impl<I, K: Ord, V, O, Map: Fn(I) -> Vec<(K, V)>, Reduce: Fn((K, Vec<V>)) -> Vec<O>>
     MapReduce<I, K, V, O, Map, Reduce>
 {

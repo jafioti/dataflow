@@ -10,6 +10,7 @@ pub use connectors::*;
 #[cfg(test)]
 mod tests;
 
+#[derive(Clone, Copy)]
 pub struct Pipeline;
 
 impl<I> Node<I> for Pipeline {

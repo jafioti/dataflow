@@ -9,6 +9,15 @@ pub struct Map<I, N: Node<I>> {
     node: N,
 }
 
+impl<I, N: Node<I> + Clone> Clone for Map<I, N> {
+    fn clone(&self) -> Self {
+        Self {
+            _phantom: self._phantom,
+            node: self.node.clone(),
+        }
+    }
+}
+
 impl<I, O, E: Node<I, Output = O>> Map<I, E> {
     pub fn new(node: E) -> Self {
         Map {

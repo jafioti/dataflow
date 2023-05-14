@@ -8,6 +8,19 @@ pub struct Stateful<I, O, S, F: Fn(I, &mut S) -> O, R: Fn(usize) -> usize> {
     remaining: R,
 }
 
+impl<I, O, S: Clone, F: Fn(I, &mut S) -> O + Clone, R: Fn(usize) -> usize + Clone> Clone
+    for Stateful<I, O, S, F, R>
+{
+    fn clone(&self) -> Self {
+        Self {
+            _phantom: self._phantom,
+            function: self.function.clone(),
+            state: self.state.clone(),
+            remaining: self.remaining.clone(),
+        }
+    }
+}
+
 fn identity_remaining(before: usize) -> usize {
     before
 }

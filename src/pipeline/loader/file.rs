@@ -9,6 +9,7 @@ use rand::{prelude::SliceRandom, thread_rng};
 
 use crate::pipeline::*;
 
+#[derive(Clone)]
 pub struct FileLoader {
     files: Vec<PathBuf>,
     currently_loaded_index: usize, // The last example we loaded as an index of the load_order vector (starts at 0)

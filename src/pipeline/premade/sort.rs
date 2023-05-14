@@ -6,6 +6,15 @@ pub struct Sort<T, F: Fn(&T, &T) -> Ordering> {
     sort_fn: F,
 }
 
+impl<T, F: Clone + Fn(&T, &T) -> Ordering> Clone for Sort<T, F> {
+    fn clone(&self) -> Self {
+        Self {
+            _phantom: self._phantom,
+            sort_fn: self.sort_fn.clone(),
+        }
+    }
+}
+
 impl<T, F: Fn(&T, &T) -> Ordering> Sort<T, F> {
     pub fn new(sort_fn: F) -> Self {
         Sort {

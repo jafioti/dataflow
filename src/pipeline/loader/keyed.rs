@@ -8,6 +8,7 @@ use itertools::Itertools;
 use crate::pipeline::*;
 
 /// A loader with a key generating function
+#[derive(Clone)]
 pub struct KeyedLoader {
     files: Vec<String>,
     file_sizes: Vec<usize>,
