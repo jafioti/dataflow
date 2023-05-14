@@ -11,29 +11,29 @@ Dataflow is a data processing library that provides composable primatives to bui
 ## Usage
 To build a pipeline, first start with a loader Node:
 ```rust
-use dataflow::pipeline::RandomLoader;
+use dataflow::prelude::*;
 
 fn main() {
-  let pipeline = RandomLoader::new(vec!["file1.txt".to_string(), "file2.txt".to_string()]);
+  let pipeline = FileLoader::from_directory("my_data_directory");
 }
 ```
-The RandomLoader by default loads individual lines randomly from files. Next add a transformation to it with the `map()` function:
+The FileLoader loads the files from the directory in a random order. Next add a transformation to it with the `map()` function:
 ```rust
-let pipeline = RandomLoader::new(vec!["file1.txt".to_string(), "file2.txt".to_string()])
-      .map(|line| format!("Hello {}", line)); // Add hello to each line
+let pipeline = FileLoader::from_directory("my_data_directory")
+      .map(|(_, text)| format!("Hello {}", text)) // Add hello to each file
 ```
 `map()` takes in a Node that processes a single sample at a time. If we want to do batch processing, we can use `.chain()` which takes a Node that can process a batch at a time.
 
-Important node: **All functions and closures are also Nodes!** This means that whenever we want to add a stateless transformation, we could simple use a function. In this case, the closure takes in a single datapoint and outputs a single datapoint. 
+Important note: **All functions and closures are also Nodes!** This means that whenever we want to add a stateless transformation, we could just use a function. In this case, the closure takes in a single datapoint and outputs a single datapoint. 
 
 Now we've added "Hello " to every line, let's use a tokenizer from `dataflow_nlp` in our pipeline:
 ```rust
 // Our tokenizer
-let tokenizer = dataflow_nlp::tokenization::WordpieceTokenizer::load();
+let tokenizer = WordpieceTokenizer::load();
 
 // Our pipeline
-let pipeline = RandomLoader::new(vec!["file1.txt".to_string(), "file2.txt".to_string()])
-      .map(|line| format!("Hello {}", line)) // Add hello to each line
+let pipeline = FileLoader::from_directory("my_data_directory")
+      .map(|(_, text)| format!("Hello {}", text)) // Add hello to each file
       .chain(tokenizer); // Tokenize the lines
 
 ```
@@ -44,9 +44,9 @@ Great! Now our data gets efficiently tokenized in batches. Right now, we will ge
 let tokenizer = dataflow_nlp::tokenization::WordpieceTokenizer::load();
 
 // Our pipeline
-let pipeline = RandomLoader::new(vec!["file1.txt".to_string(), "file2.txt".to_string()])
-      .map(|line| format!("Hello {}", line)) // Add hello to each line
-      .chain(tokenizer) // Tokenize the lines
+let pipeline = FileLoader::from_directory("my_data_directory")
+      .map(|(_, text)| format!("Hello {}", text)) // Add hello to each file
+      .chain(tokenizer) // Tokenize the files
       .chain(Batch::new(64)); // Create batches of 64
 ```
 That's it! We'll now get batches of 64 tokenized sentences.
@@ -57,12 +57,11 @@ As discussed before, everything in the pipeline implements the `Node` trait. Ran
 ### Custom Nodes
 In fact, you can implement your own Nodes as well, by implementing the `Node` trait!
 ```rust
-pub trait Node {
-    type Input;
+pub trait Node<Input> {
     type Output;
 
     /// Process a batch of data
-    fn process(&mut self, input: Self::Input) -> Self::Output;
+    fn process(&mut self, input: Input) -> Self::Output;
     /// Reset signal propogates through pipeline
     fn reset(&mut self) {}
     /// Get number of examples left
@@ -85,7 +84,7 @@ let output: Vec<Vec<Vec<String>>> = pipeline.process(vec![(); 128])
 Let's do something cooler. Let's put it in a Dataloader and use it in an ML training loop:
 ```rust
 // Make the dataloader
-let mut dataloader = dataflow::dataloader::Dataloader(pipeline);
+let mut dataloader = Dataloader(pipeline);
 
 // Training loop
 for example in &mut dataloader {
@@ -95,11 +94,6 @@ for example in &mut dataloader {
 ```
 
 To Do:
-- [ ] Spin out all NLP related stuff into a dataflow-nlp crate.
 - [ ] Make dataloader use a multiqueue instead of draining all examples into buffer on main thread
 - [ ] Make auto-parallel pipeline Node using rayon
-- [ ] Add async ability and remote sources.
-- [ ] Simplify the type magic used to make functions-as-closures work. Allow implementation of Node directly. Remove duplicate impls of Node and ExplicitNode
-
-## Codebase Visualization
-![Visualization of the codebase](./diagram.svg)
+- [ ] Add async ability and remote sources. (blocked by stable async traits)
