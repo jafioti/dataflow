@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use super::{BasicVocab, TokenNotFoundError, Vocab};
+use dataflow::prelude::Node;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Default, Clone)]
@@ -60,5 +61,37 @@ impl Vocab for BPEVocab {
         tokens: &[Vec<String>],
     ) -> Result<Vec<Vec<usize>>, TokenNotFoundError> {
         self.vocab.batch_indexes_from_tokens(tokens)
+    }
+}
+
+impl Node<Vec<Vec<String>>> for BPEVocab {
+    type Output = Vec<Vec<usize>>;
+
+    fn process(&mut self, input: Vec<Vec<String>>) -> Self::Output {
+        self.batch_indexes_from_tokens(&input).unwrap()
+    }
+}
+
+impl Node<Vec<String>> for BPEVocab {
+    type Output = Vec<usize>;
+
+    fn process(&mut self, input: Vec<String>) -> Self::Output {
+        self.indexes_from_tokens(&input).unwrap()
+    }
+}
+
+impl Node<Vec<Vec<usize>>> for BPEVocab {
+    type Output = Vec<Vec<String>>;
+
+    fn process(&mut self, input: Vec<Vec<usize>>) -> Self::Output {
+        self.batch_tokens_from_indexes(&input).unwrap()
+    }
+}
+
+impl Node<Vec<usize>> for BPEVocab {
+    type Output = Vec<String>;
+
+    fn process(&mut self, input: Vec<usize>) -> Self::Output {
+        self.tokens_from_indexes(&input).unwrap()
     }
 }

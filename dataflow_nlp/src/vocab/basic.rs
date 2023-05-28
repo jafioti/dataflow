@@ -1,4 +1,5 @@
 use super::TokenNotFoundError;
+use dataflow::prelude::Node;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -37,7 +38,7 @@ impl BasicVocab {
 
     /// Returns num_tokens
     pub fn len(&self) -> usize {
-        self.num_tokens as usize
+        self.num_tokens
     }
 
     /// Add token to vocab
@@ -52,10 +53,9 @@ impl BasicVocab {
         self.index2token.extend(tokens.clone());
         for (i, token) in tokens.iter().enumerate() {
             // Probably a more efficient way to do this and avoid the loop
-            self.token2index
-                .insert(token.clone(), self.num_tokens + i as usize);
+            self.token2index.insert(token.clone(), self.num_tokens + i);
         }
-        self.num_tokens += tokens.len() as usize;
+        self.num_tokens += tokens.len();
     }
 
     /// Remove a vec of tokens from vocab (NOT SURE IF THIS SHOULD BE KEPT)
@@ -70,10 +70,10 @@ impl BasicVocab {
     /// Remove token from vocab
     pub fn _remove_token(&mut self, token: &str) {
         // Loop through all higher token2index mappings and decrement (must be a more efficient way to do this)
-        for i in (self.token2index[token] as usize) + 1..self.index2token.len() {
+        for i in (self.token2index[token]) + 1..self.index2token.len() {
             *self.token2index.get_mut(&self.index2token[i]).unwrap() -= 1;
         }
-        self.index2token.remove(self.token2index[token] as usize);
+        self.index2token.remove(self.token2index[token]);
         self.token2index.remove(token);
         self.num_tokens -= 1;
     }
@@ -89,7 +89,7 @@ impl BasicVocab {
 
         let mut tokens: Vec<String> = Vec::with_capacity(indexes.len());
         for index in indexes {
-            tokens.push(self.index2token[*index as usize].to_string());
+            tokens.push(self.index2token[*index].to_string());
         }
         Ok(tokens)
     }
@@ -130,5 +130,37 @@ impl BasicVocab {
             indexes.push(self.indexes_from_tokens(sent)?);
         }
         Ok(indexes)
+    }
+}
+
+impl Node<Vec<Vec<String>>> for BasicVocab {
+    type Output = Vec<Vec<usize>>;
+
+    fn process(&mut self, input: Vec<Vec<String>>) -> Self::Output {
+        self.batch_indexes_from_tokens(&input).unwrap()
+    }
+}
+
+impl Node<Vec<String>> for BasicVocab {
+    type Output = Vec<usize>;
+
+    fn process(&mut self, input: Vec<String>) -> Self::Output {
+        self.indexes_from_tokens(&input).unwrap()
+    }
+}
+
+impl Node<Vec<Vec<usize>>> for BasicVocab {
+    type Output = Vec<Vec<String>>;
+
+    fn process(&mut self, input: Vec<Vec<usize>>) -> Self::Output {
+        self.batch_tokens_from_indexes(&input).unwrap()
+    }
+}
+
+impl Node<Vec<usize>> for BasicVocab {
+    type Output = Vec<String>;
+
+    fn process(&mut self, input: Vec<usize>) -> Self::Output {
+        self.tokens_from_indexes(&input).unwrap()
     }
 }
