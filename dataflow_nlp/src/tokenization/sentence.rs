@@ -1,6 +1,6 @@
 use super::Tokenizer;
 
-use dataflow::pipeline::ExplicitNode;
+use dataflow::prelude::Node;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
@@ -82,20 +82,26 @@ fn split_keep(text: &str) -> Vec<&str> {
     result
 }
 
-impl ExplicitNode<String, Vec<String>> for SentenceTokenizer {
-    fn process(&mut self, input: String) -> Vec<String> {
+impl Node<String> for SentenceTokenizer {
+    type Output = Vec<String>;
+
+    fn process(&mut self, input: String) -> Self::Output {
         self.tokenize(&input)
     }
 }
 
-impl ExplicitNode<&str, Vec<String>> for SentenceTokenizer {
-    fn process(&mut self, input: &str) -> Vec<String> {
+impl Node<&str> for SentenceTokenizer {
+    type Output = Vec<String>;
+
+    fn process(&mut self, input: &str) -> Self::Output {
         self.tokenize(input)
     }
 }
 
-impl ExplicitNode<Vec<String>, Vec<Vec<String>>> for SentenceTokenizer {
-    fn process(&mut self, input: Vec<String>) -> Vec<Vec<String>> {
+impl Node<Vec<String>> for SentenceTokenizer {
+    type Output = Vec<Vec<String>>;
+
+    fn process(&mut self, input: Vec<String>) -> Self::Output {
         self.batch_tokenize(input)
     }
 }

@@ -5,7 +5,7 @@ use std::{
     path::Path,
 };
 
-use crate::pipeline::*;
+use dataflow::pipeline::*;
 
 /// Given files, randomly load segments seperated by a delimeter
 pub struct RandomLoader {

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use super::Tokenizer;
 
-use dataflow::pipeline::ExplicitNode;
+use dataflow::prelude::Node;
 use serde::{Deserialize, Serialize};
 use tokenizers::Tokenizer as HFTokenizer;
 
@@ -104,20 +104,23 @@ impl Tokenizer for BPETokenizer {
     }
 }
 
-impl ExplicitNode<String, Vec<String>> for BPETokenizer {
-    fn process(&mut self, input: String) -> Vec<String> {
+impl Node<String> for BPETokenizer {
+    type Output = Vec<String>;
+    fn process(&mut self, input: String) -> Self::Output {
         self.tokenize(&input)
     }
 }
 
-impl ExplicitNode<&str, Vec<String>> for BPETokenizer {
-    fn process(&mut self, input: &str) -> Vec<String> {
+impl Node<&str> for BPETokenizer {
+    type Output = Vec<String>;
+    fn process(&mut self, input: &str) -> Self::Output {
         self.tokenize(input)
     }
 }
 
-impl ExplicitNode<Vec<String>, Vec<Vec<String>>> for BPETokenizer {
-    fn process(&mut self, input: Vec<String>) -> Vec<Vec<String>> {
+impl Node<Vec<String>> for BPETokenizer {
+    type Output = Vec<Vec<String>>;
+    fn process(&mut self, input: Vec<String>) -> Self::Output {
         self.batch_tokenize(input)
     }
 }

@@ -1,6 +1,6 @@
 use super::Tokenizer;
 
-use dataflow::pipeline::ExplicitNode;
+use dataflow::prelude::Node;
 use serde::{Deserialize, Serialize};
 use tokenizers::Tokenizer as HFTokenizer;
 
@@ -109,20 +109,26 @@ impl Tokenizer for WordpieceTokenizer {
     }
 }
 
-impl ExplicitNode<String, Vec<String>> for WordpieceTokenizer {
-    fn process(&mut self, input: String) -> Vec<String> {
+impl Node<String> for WordpieceTokenizer {
+    type Output = Vec<String>;
+
+    fn process(&mut self, input: String) -> Self::Output {
         self.tokenize(&input)
     }
 }
 
-impl ExplicitNode<&str, Vec<String>> for WordpieceTokenizer {
-    fn process(&mut self, input: &str) -> Vec<String> {
+impl Node<&str> for WordpieceTokenizer {
+    type Output = Vec<String>;
+
+    fn process(&mut self, input: &str) -> Self::Output {
         self.tokenize(input)
     }
 }
 
-impl ExplicitNode<Vec<String>, Vec<Vec<String>>> for WordpieceTokenizer {
-    fn process(&mut self, input: Vec<String>) -> Vec<Vec<String>> {
+impl Node<Vec<String>> for WordpieceTokenizer {
+    type Output = Vec<Vec<String>>;
+
+    fn process(&mut self, input: Vec<String>) -> Self::Output {
         self.batch_tokenize(input)
     }
 }
