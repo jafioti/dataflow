@@ -75,3 +75,18 @@ impl<Input, Out1, Out2, E: Node<Input, Output = (Out1, Out2)>> ExtendNodePair<In
         (self, Pair::new(node1, node2))
     }
 }
+
+/// Feed a bunch of empty types until processing is done, returns result as vector
+pub trait RunNode<T> {
+    fn run(self, block_size: usize) -> Vec<T>;
+}
+
+impl<T, N: Node<Vec<()>, Output = Vec<T>>> RunNode<T> for N {
+    fn run(mut self, block_size: usize) -> Vec<T> {
+        let mut results = vec![];
+        while self.data_remaining(usize::MAX) > 0 {
+            results.append(&mut self.process(vec![(); block_size]));
+        }
+        results
+    }
+}

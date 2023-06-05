@@ -67,6 +67,26 @@ impl<Input, Output, E: Node<Input, Output = Vec<Output>>> ExtendNodeMap<Input, O
     }
 }
 
+pub trait ExtendNodeFlatten<I, O, N: Node<Vec<I>, Output = Vec<O>>> {
+    fn flatten(self) -> (N, Flatten);
+}
+
+impl<I, O: IntoIterator, N: Node<Vec<I>, Output = Vec<O>>> ExtendNodeFlatten<I, O, N> for N {
+    fn flatten(self) -> (Self, Flatten) {
+        (self, Flatten)
+    }
+}
+
+pub struct Flatten;
+
+impl<I: IntoIterator> Node<Vec<I>> for Flatten {
+    type Output = Vec<I::Item>;
+
+    fn process(&mut self, input: Vec<I>) -> Self::Output {
+        input.into_iter().flatten().collect()
+    }
+}
+
 pub struct FilterMap<I, N: Node<I>> {
     _phantom: PhantomData<I>,
     node: N,
