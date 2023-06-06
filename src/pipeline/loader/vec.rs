@@ -33,6 +33,9 @@ impl<T: Clone> Node<Vec<()>> for VecLoader<T> {
     }
 
     fn process(&mut self, input: Vec<()>) -> Self::Output {
+        if self.current_progress >= self.elements.len() {
+            return vec![];
+        }
         let elements = self.elements
             [self.current_progress..(self.current_progress + input.len()).min(self.elements.len())]
             .to_vec();
@@ -41,6 +44,6 @@ impl<T: Clone> Node<Vec<()>> for VecLoader<T> {
     }
 
     fn data_remaining(&self, _: usize) -> usize {
-        self.elements.len() - self.current_progress
+        self.elements.len().saturating_sub(self.current_progress)
     }
 }
