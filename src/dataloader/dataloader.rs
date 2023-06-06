@@ -88,7 +88,7 @@ impl<T: Send + 'static> Iterator for Dataloader<T> {
             if let Some(process) = &self.loading_process {
                 if process.is_finished() || self.buffer.is_empty() {
                     // Unload thread
-                    let process = std::mem::replace(&mut self.loading_process, None).unwrap();
+                    let process = self.loading_process.take().unwrap();
                     let (pipeline, data) = process.join().unwrap();
                     self.pipeline = Some(pipeline);
                     self.buffer.extend(data);

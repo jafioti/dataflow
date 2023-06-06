@@ -107,7 +107,7 @@ where
     I: Send + 'static,
     N::Output: Send + 'static,
 {
-    let mut pipeline = std::mem::replace(&mut pipeline_holder.pipeline, None).unwrap();
+    let mut pipeline = pipeline_holder.pipeline.take().unwrap();
     let handle = thread::spawn(move || (pipeline.process(input), pipeline));
     let (output, pipeline) = handle.join().unwrap();
     pipeline_holder.pipeline = Some(pipeline);
