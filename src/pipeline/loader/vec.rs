@@ -30,6 +30,7 @@ impl<T: Clone> Node<Vec<()>> for VecLoader<T> {
         if self.shuffle {
             self.elements.shuffle(&mut thread_rng());
         }
+        self.current_progress = 0;
     }
 
     fn process(&mut self, input: Vec<()>) -> Self::Output {
